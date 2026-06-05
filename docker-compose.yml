@@ -17,7 +17,7 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     env_file:
-      - backend/.env.example
+      - backend/.env
     depends_on:
       - db
     ports:
