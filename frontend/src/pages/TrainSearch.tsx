@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 interface Train {
   train_number: string;
@@ -27,7 +27,7 @@ const TrainResultCard: React.FC<{ train: Train }> = ({ train }) => {
     if (faresOpen) { setFaresOpen(false); return; }
     setFaresLoading(true);
     try {
-      const res = await axios.get<Fare[]>(`/api/v1/fares/${train.train_number}`);
+      const res = await api.get<Fare[]>(`/api/v1/fares/${train.train_number}`);
       setFares(res.data);
     } catch { setFares([]); }
     finally { setFaresLoading(false); setFaresOpen(true); }
@@ -99,9 +99,9 @@ const TrainSearch: React.FC = () => {
     setLoading(true);
     setSearched(false);
     try {
-      const res = await axios.get<Train[]>('/api/v1/trains/search', {
-        params: { from_station: src.trim(), to_station: dst.trim() },
-      });
+      const res = await api.get<Train[]>('/api/v1/trains/search', {
+      params: { from_station: src.trim(), to_station: dst.trim() },
+    });
       setResults(res.data);
       setSearched(true);
     } catch (e: any) {
