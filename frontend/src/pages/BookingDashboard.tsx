@@ -22,7 +22,7 @@ const BookingDashboard: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const resp = await axios.get<BookingData[]>(`/api/v1/bookings?user_id=${userId}`);
+      const resp = await api.get<BookingData[]>(`/api/v1/bookings?user_id=${userId}`);
       setBookings(resp.data);
     } catch (e: any) {
       setError(e?.response?.data?.detail || 'Failed to fetch bookings.');
@@ -35,7 +35,7 @@ const BookingDashboard: React.FC = () => {
 
   const cancel = async (id: number) => {
     try {
-      await axios.delete(`/api/v1/bookings/${id}`);
+      await api.delete(`/api/v1/bookings/${id}`);
       setBookings(prev =>
         prev.map(b => b.id === id ? { ...b, status: 'CANCELLED' } : b)
       );
