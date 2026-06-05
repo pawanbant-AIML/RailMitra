@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dark text-slate-100 font-sans;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    min-height: 100vh;
+  }
+  * { box-sizing: border-box; }
+}
+
+@layer components {
+  /* Glass morphism card */
+  .glass {
+    @apply rounded-2xl shadow-2xl border border-white/10;
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  /* Sidebar glass */
+  .glass-dark {
+    @apply rounded-2xl shadow-2xl border border-white/5;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* Primary button */
+  .btn-primary {
+    @apply bg-primary-500 hover:bg-primary-600 active:bg-primary-700 text-white
+           font-semibold px-5 py-2.5 rounded-xl transition-all duration-200
+           shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50
+           hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50
+           disabled:cursor-not-allowed disabled:hover:translate-y-0;
+  }
+
+  /* Accent button */
+  .btn-accent {
+    @apply bg-accent-500 hover:bg-accent-600 text-white font-semibold
+           px-5 py-2.5 rounded-xl transition-all duration-200
+           shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50
+           hover:-translate-y-0.5 active:translate-y-0;
+  }
+
+  /* Danger button */
+  .btn-danger {
+    @apply bg-red-500 hover:bg-red-600 text-white font-semibold
+           px-4 py-2 rounded-xl transition-all duration-200 text-sm
+           hover:-translate-y-0.5 active:translate-y-0;
+  }
+
+  /* Input field */
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl border border-white/10
+           bg-white/5 text-slate-100 placeholder-slate-400
+           focus:outline-none focus:ring-2 focus:ring-primary-500/60
+           focus:border-primary-500/60 transition-all duration-200;
+  }
+
+  /* Nav link */
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300
+           hover:bg-white/10 hover:text-white transition-all duration-200
+           font-medium cursor-pointer;
+  }
+  .nav-link.active {
+    @apply bg-primary-500/20 text-primary-400 border border-primary-500/30;
+  }
+
+  /* Status badges */
+  .badge-confirmed {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+           bg-emerald-500/20 text-emerald-400 border border-emerald-500/30;
+  }
+  .badge-cancelled {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+           bg-red-500/20 text-red-400 border border-red-500/30;
+  }
+  .badge-class {
+    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold
+           bg-primary-500/20 text-primary-300 border border-primary-500/30;
+  }
+
+  /* Scrollbar */
+  .custom-scroll::-webkit-scrollbar { width: 4px; }
+  .custom-scroll::-webkit-scrollbar-track { @apply bg-transparent; }
+  .custom-scroll::-webkit-scrollbar-thumb { @apply bg-primary-500/40 rounded-full; }
+  .custom-scroll::-webkit-scrollbar-thumb:hover { @apply bg-primary-500/70; }
+
+  /* Chat bubbles */
+  .bubble-user {
+    @apply bg-primary-500 text-white px-4 py-2.5 rounded-2xl rounded-tr-sm
+           max-w-sm shadow-lg text-sm leading-relaxed;
+  }
+  .bubble-bot {
+    @apply bg-white/10 text-slate-100 px-4 py-2.5 rounded-2xl rounded-tl-sm
+           max-w-xl shadow-lg text-sm leading-relaxed border border-white/10;
+  }
+
+  /* Typing dots */
+  .typing-dot {
+    @apply w-2 h-2 rounded-full bg-slate-400 animate-bounce;
+  }
+}
