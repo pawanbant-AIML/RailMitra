@@ -9,5 +9,6 @@ RUN npm run build
 # ---------- Runtime ----------
 FROM nginx:stable-alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY frontend/.env ./.env
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
