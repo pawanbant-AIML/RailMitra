@@ -37,7 +37,6 @@ app.include_router(routes.router, prefix="/api/v1", tags=["Routes"])
 app.include_router(schedules.router, prefix="/api/v1", tags=["Schedules"])
 app.include_router(fares.router, prefix="/api/v1", tags=["Fares"])
 app.include_router(bookings.router, prefix="/api/v1", tags=["Bookings"])
-app.include_router(search.router, prefix="/api/v1", tags=["Search"])   # <--- NEW
 
 @app.get("/health", tags=["Health"])
 def health_check():
@@ -45,6 +44,7 @@ def health_check():
     return {"status": "ok"}
 
 if __name__ == "__main__":
+    # Use PORT environment variable if available (Render), otherwise fallback to settings
     port = int(os.environ.get("PORT", settings.SERVER_PORT))
     uvicorn.run(
         "app.main:app",
@@ -52,3 +52,24 @@ if __name__ == "__main__":
         port=port,
         reload=settings.DEBUG,
     )
+
+backend/app/core/config.py
+import os
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(case_sensitive=True)
+
+    SERVER_HOST: str = Field(default="0.0.0.0")
+    SERVER_PORT: str = Field(default="8000")
+    DEBUG: bool = Field(default=True)
+
+    DATABASE_URL: str = Field(
+        default="sqlite:///C:/fare/train-ticket-assistant/scripts/train_ticket.db"
+    )
+    JWT_SECRET_KEY: str = Field(default="super-secret-jwt-key")
+    JWT_ALGORITHM: str = Field(default="HS256")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60)
+
+settings = Settings()
