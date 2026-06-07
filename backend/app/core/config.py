@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+    model_config = SettingsConfigDict(case_sensitive=True)
 
     SERVER_HOST: str = Field(default="0.0.0.0")
     SERVER_PORT: str = Field(default="8000")
