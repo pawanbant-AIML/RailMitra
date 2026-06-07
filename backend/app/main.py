@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -43,9 +44,11 @@ def health_check():
     return {"status": "ok"}
 
 if __name__ == "__main__":
+    # Use PORT environment variable if available (Render), otherwise fallback to settings
+    port = int(os.environ.get("PORT", settings.SERVER_PORT))
     uvicorn.run(
         "app.main:app",
         host=settings.SERVER_HOST,
-        port=int(settings.SERVER_PORT),
+        port=port,
         reload=settings.DEBUG,
     )
