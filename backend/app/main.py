@@ -38,6 +38,16 @@ app.include_router(schedules.router, prefix="/api/v1", tags=["Schedules"])
 app.include_router(fares.router, prefix="/api/v1", tags=["Fares"])
 app.include_router(bookings.router, prefix="/api/v1", tags=["Bookings"])
 
+@app.get("/", tags=["Health"])
+def root():
+    """Root endpoint for Render health check and API overview."""
+    return {
+        "message": "RailMitra API is running",
+        "docs": "/docs",
+        "health": "/health",
+        "api_version": "/api/v1"
+    }
+
 @app.get("/health", tags=["Health"])
 def health_check():
     logger.info("Health check requested")
@@ -52,4 +62,3 @@ if __name__ == "__main__":
         port=port,
         reload=settings.DEBUG,
     )
-
