@@ -8,6 +8,9 @@ RUN npm run build
 
 # ---------- Runtime ----------
 FROM nginx:stable-alpine
+# Copy custom nginx config
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+# Copy built files
 COPY --from=builder /app/dist /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
