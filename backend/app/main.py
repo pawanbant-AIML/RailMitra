@@ -12,6 +12,7 @@ from app.api.v1.endpoints import (
     schedules,
     fares,
     bookings,
+    search,   # <--- NEW
 )
 from app.core.config import settings
 from app.core.logger import logger
@@ -37,6 +38,7 @@ app.include_router(routes.router, prefix="/api/v1", tags=["Routes"])
 app.include_router(schedules.router, prefix="/api/v1", tags=["Schedules"])
 app.include_router(fares.router, prefix="/api/v1", tags=["Fares"])
 app.include_router(bookings.router, prefix="/api/v1", tags=["Bookings"])
+app.include_router(search.router, prefix="/api/v1", tags=["Search"])   # <--- NEW
 
 @app.get("/health", tags=["Health"])
 def health_check():
@@ -44,7 +46,6 @@ def health_check():
     return {"status": "ok"}
 
 if __name__ == "__main__":
-    # Use PORT environment variable if available (Render), otherwise fallback to settings
     port = int(os.environ.get("PORT", settings.SERVER_PORT))
     uvicorn.run(
         "app.main:app",
