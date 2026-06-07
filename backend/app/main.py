@@ -12,7 +12,6 @@ from app.api.v1.endpoints import (
     schedules,
     fares,
     bookings,
-    search,   # <--- NEW
 )
 from app.core.config import settings
 from app.core.logger import logger
