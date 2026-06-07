@@ -8,7 +8,9 @@ RUN npm run build
 
 # ---------- Runtime ----------
 FROM nginx:stable-alpine
-# Copy custom nginx config
+# Remove default config
+RUN rm /etc/nginx/conf.d/default.conf
+# Copy custom config (note: context is repository root)
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 # Copy built files
 COPY --from=builder /app/dist /usr/share/nginx/html
