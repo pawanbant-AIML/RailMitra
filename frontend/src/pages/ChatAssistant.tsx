@@ -31,7 +31,7 @@ const ChatAssistant: React.FC = () => {
     setLoading(true);
 
     try {
-      const resp = await api.post<ChatMessage[]>('/api/v1/chat', newHistory);
+      const resp = await api.post<ChatMessage[]>('/chat', newHistory);
       setMessages(resp.data);
     } catch (err: any) {
       const detail =
