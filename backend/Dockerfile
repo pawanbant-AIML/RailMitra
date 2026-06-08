@@ -9,11 +9,10 @@ COPY backend/.env .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the pre-populated sqlite db into the image
 COPY scripts/train_ticket.db ./train_ticket.db
-
 COPY backend/app ./app
 
 EXPOSE 10000
 
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port $PORT"]
+# Use PORT environment variable, default to 10000
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
