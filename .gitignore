@@ -4,7 +4,7 @@ __pycache__/
 *.pyo
 .venv/
 venv/
-trainvenv/       # ← your actual virtual environment folder
+trainvenv/
 .env
 
 # Data (only keep the keepers, ignore everything else)
