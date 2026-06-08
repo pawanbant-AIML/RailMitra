@@ -10,7 +10,11 @@ def get_default_db_url():
     return "sqlite:///C:/fare/train-ticket-assistant/scripts/train_ticket.db"
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(case_sensitive=True)
+    model_config = SettingsConfigDict(
+        case_sensitive=True,
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
 
     SERVER_HOST: str = Field(default="0.0.0.0")
     SERVER_PORT: str = Field(default="8000")
