@@ -8,6 +8,9 @@ COPY backend/requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy the pre-populated sqlite db into the image
+COPY scripts/train_ticket.db ./train_ticket.db
+
 COPY backend/app ./app
 
 EXPOSE 10000
