@@ -34,7 +34,6 @@ def chat_endpoint(messages: List[schemas.ChatMessage], db: Session = Depends(get
         raise HTTPException(status_code=400, detail="No user message found")
 
     # Build request for the new NLP service
-    # IMPORTANT: do not include "entities" here unless your ChatMessage model actually has it.
     analysis_request = ChatAnalysisRequest(
         user_message=last_user.content,
         conversation_history=[
@@ -48,7 +47,7 @@ def chat_endpoint(messages: List[schemas.ChatMessage], db: Session = Depends(get
 
     analysis = chat_nlp.analyze(analysis_request)
 
-    # Fallback to old NLP for backward compatibility
+    # Fallback to old NLP (kept for logging / backward compat)
     intent, entities = nlp_service.predict(last_user.content)
     print(f"[chat] intent={analysis.intent!r}  entities={analysis.entities}")
 
@@ -178,9 +177,10 @@ def chat_endpoint(messages: List[schemas.ChatMessage], db: Session = Depends(get
     elif analysis.next_action == "COMPARE_ROUTES":
         reply = "📊 Route comparison feature coming soon! For now, try searching individual routes."
 
-    # ── CANCEL TICKET ──────────────────────────────────────────────────────
-    elif intent == "cancel_ticket":
-        bid = entities.get("booking_id")
+    # ── CANCEL BOOKING ───────────────────────────────────────────────────────
+    # Fix #6: use analysis.intent instead of old intent variable
+    elif analysis.intent == "CANCEL_BOOKING":
+        bid = analysis.entities.booking_id
         if not bid:
             reply = '❌ Please provide a Booking ID.\nExample: *"Cancel booking 5"*'
         else:
@@ -191,7 +191,7 @@ def chat_endpoint(messages: List[schemas.ChatMessage], db: Session = Depends(get
                 reply = f'❌ Booking **#{bid}** not found. Say *"Show my bookings"* to see valid IDs.'
 
     # ── BOOKING HISTORY ────────────────────────────────────────────────
-    elif intent == "booking_history":
+    elif analysis.intent == "BOOKING_HISTORY":
         history = booking_svc.list_user_bookings(1, db)
         if not history:
             reply = '📭 You have no bookings yet.\nTry: *"Book 2 sleeper tickets from Bangalore to Mumbai tomorrow"*'
@@ -212,9 +212,10 @@ def chat_endpoint(messages: List[schemas.ChatMessage], db: Session = Depends(get
             reply = "\n".join(lines)
 
     # ── CHECK ROUTE ────────────────────────────────────────────────────────
-    elif intent == "check_route":
-        tn = entities.get("train_number")
+    elif analysis.intent == "CHECK_ROUTE":
+        tn = analysis.entities.train_number
         if not tn:
+            # try to get a train number from search if source/destination are known
             search_entities = {
                 "source_station": analysis.entities.source,
                 "destination_station": analysis.entities.destination,
