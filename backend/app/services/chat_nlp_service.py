@@ -39,7 +39,7 @@ class Entity(BaseModel):
 
 class ChatAnalysisRequest(BaseModel):
     user_message: str
-    conversation_history: Optional[List[Dict[str, str]]] = None
+    conversation_history: Optional[List[Dict[str, Any]]] = None   # Fix #1
 
 
 class ChatAnalysisResponse(BaseModel):
@@ -127,28 +127,14 @@ PREFERENCE_KEYWORDS = {
     "minimum time": "fastest",
 }
 
-BOOKING_HISTORY_PHRASES = (
-    "show my bookings",
-    "my bookings",
-    "booking history",
-    "view bookings",
-    "show bookings",
-)
-
-CANCEL_PHRASES = (
-    "cancel booking",
-    "cancel ticket",
-    "cancel my booking",
-    "cancel reservation",
-)
-
-CHECK_ROUTE_PHRASES = (
-    "route for train",
-    "show route",
-    "check route",
-    "train route",
-    "route for",
-)
+# High‑priority intent phrases (used only for the new intent block)
+BOOKING_HISTORY_WORDS = ["show my bookings", "my bookings"]
+CANCEL_WORD = "cancel"
+CHECK_ROUTE_WORDS = ["route for"]
+ROUTE_SEARCH_WORDS = [
+    "find train", "find trains", "search train", "search trains",
+    "train from", "trains from"
+]
 
 FARE_PHRASES = (
     "fare from",
@@ -192,20 +178,13 @@ SHORTEST_PHRASES = (
     "fewest stops",
 )
 
+# Kept for backward compatibility if needed, but not used in new block
 ROUTE_SEARCH_PHRASES = (
     "find trains",
     "search trains",
     "trains from",
     "train from",
     "between",
-)
-
-CLARIFY_PHRASES = (
-    "what",
-    "which",
-    "how",
-    "tell me",
-    "show me",
 )
 
 
@@ -288,36 +267,34 @@ class ChatNLPService:
 
     # -------------------- Memory --------------------
 
-    def _build_memory(self, history: Optional[List[Dict[str, str]]]) -> Dict[str, Any]:
-        """
-        Build context from plain conversation history.
-        We do not rely on a pre-existing entities field in history.
-        """
-        memory: Dict[str, Any] = {}
+    # Fix #2: NEW simple memory builder that scans all messages for entities
+    def _build_memory(self, history: Optional[List[Dict[str, Any]]]) -> Dict[str, Any]:
+        """Recover source/destination/date/class/passengers from previous conversation."""
+        memory = {}
 
         if not history:
             return memory
 
         for msg in history:
-            role = (msg.get("role") or "").lower()
-            content = (msg.get("content") or "").strip()
-            if not content:
-                continue
+            text = str(msg.get("content", "")).lower()
 
-            if role == "assistant":
-                pending_slot = self._guess_clarification_slot(content)
-                if pending_slot:
-                    memory["_pending_slot"] = pending_slot
-                continue
+            source, destination = self._extract_stations(text, memory)  # context not needed here
+            if source:
+                memory["source"] = source
+            if destination:
+                memory["destination"] = destination
 
-            if role == "user":
-                extracted = self._extract_entities(content, memory).model_dump(exclude_none=True)
-                memory = self._merge_context(memory, extracted)
+            date = self._extract_date(text)
+            if date:
+                memory["date"] = date
 
-                # If the user answer fills the pending slot, clear it
-                pending_slot = memory.get("_pending_slot")
-                if pending_slot and extracted.get(pending_slot) is not None:
-                    memory.pop("_pending_slot", None)
+            travel_class = self._extract_class(text)
+            if travel_class:
+                memory["travel_class"] = travel_class
+
+            passengers = self._extract_passengers(text)
+            if passengers:
+                memory["passengers"] = passengers
 
         return memory
 
@@ -341,18 +318,20 @@ class ChatNLPService:
         if not msg:
             return "UNKNOWN"
 
-        # High-priority exact-ish commands first
-        if any(p in msg for p in BOOKING_HISTORY_PHRASES):
+        # ---------- Fix #3: stronger high-priority intents ----------
+        if any(word in msg for word in BOOKING_HISTORY_WORDS):
             return "BOOKING_HISTORY"
 
-        if any(p in msg for p in CANCEL_PHRASES):
-            return "CANCEL_TICKET"
+        if CANCEL_WORD in msg:
+            return "CANCEL_BOOKING"
 
-        if any(p in msg for p in CHECK_ROUTE_PHRASES) or (
-            "route" in msg and self._extract_train_number(msg) is not None
-        ):
+        if any(word in msg for word in CHECK_ROUTE_WORDS):
             return "CHECK_ROUTE"
 
+        if any(word in msg for word in ROUTE_SEARCH_WORDS):
+            return "ROUTE_SEARCH"
+
+        # ---------- keep the rest of the old intent logic ----------
         if any(p in msg for p in FARE_PHRASES):
             return "FARE_ESTIMATE"
 
@@ -371,13 +350,9 @@ class ChatNLPService:
         if any(p in msg for p in SHORTEST_PHRASES):
             return "SHORTEST_ROUTE"
 
-        if any(p in msg for p in ROUTE_SEARCH_PHRASES) or (
-            (" from " in msg or " to " in msg or " between " in msg) and self._find_station_mentions(msg)
-        ):
+        # Fallback: if the message still looks like a station query, treat as ROUTE_SEARCH
+        if (" from " in msg or " to " in msg or " between " in msg) and self._find_station_mentions(msg):
             return "ROUTE_SEARCH"
-
-        if any(p in msg for p in CLARIFY_PHRASES) and len(msg.split()) <= 6:
-            return "CLARIFY"
 
         return "UNKNOWN"
 
@@ -427,9 +402,18 @@ class ChatNLPService:
     # -------------------- Entity Extraction --------------------
 
     def _extract_entities(self, message: str, context: Dict[str, Any]) -> Entity:
+        """Extract entities from the current message, remembering previous context."""
         msg = (message or "").lower()
         entities = Entity()
 
+        # ---------- Fix #4: pre-populate from memory (context) ----------
+        entities.source = context.get("source")
+        entities.destination = context.get("destination")
+        entities.date = context.get("date")
+        entities.travel_class = context.get("travel_class")
+        entities.passengers = context.get("passengers")
+
+        # Now parse the current message – new values will override the defaults
         source, destination = self._extract_stations(msg, context)
         if source:
             entities.source = source
@@ -827,7 +811,7 @@ class ChatNLPService:
             if not context.get("destination"):
                 missing.append("destination")
 
-        elif intent == "CANCEL_TICKET":
+        elif intent == "CANCEL_BOOKING":               # <-- renamed from CANCEL_TICKET
             if not context.get("booking_id"):
                 missing.append("booking_id")
 
@@ -881,6 +865,7 @@ class ChatNLPService:
 
     # -------------------- Next Action / Payload --------------------
 
+    # Fix #5: update and add entries
     def _determine_next_action(self, intent: str, clarification_needed: bool) -> str:
         if clarification_needed:
             return "ASK_CLARIFICATION"
@@ -897,8 +882,8 @@ class ChatNLPService:
             return "BOOK"
         if intent == "BOOKING_HISTORY":
             return "BOOKING_HISTORY"
-        if intent == "CANCEL_TICKET":
-            return "CANCEL_TICKET"
+        if intent == "CANCEL_BOOKING":              # changed from CANCEL_TICKET
+            return "CANCEL_BOOKING"
         if intent == "CHECK_ROUTE":
             return "CHECK_ROUTE"
 
@@ -931,7 +916,7 @@ class ChatNLPService:
         if next_action == "BOOKING_HISTORY":
             return {}
 
-        if next_action == "CANCEL_TICKET":
+        if next_action == "CANCEL_BOOKING":         # renamed
             return {
                 "booking_id": context.get("booking_id"),
             }
@@ -946,7 +931,7 @@ class ChatNLPService:
     def _calculate_confidence(self, intent: str, entities: Entity, missing_slots: List[str]) -> float:
         confidence = 0.45
 
-        if intent in ["BOOK_TICKET", "ROUTE_SEARCH", "FARE_ESTIMATE", "BOOKING_HISTORY", "CANCEL_TICKET", "CHECK_ROUTE"]:
+        if intent in ["BOOK_TICKET", "ROUTE_SEARCH", "FARE_ESTIMATE", "BOOKING_HISTORY", "CANCEL_BOOKING", "CHECK_ROUTE"]:
             confidence = 0.8
         elif intent == "UNKNOWN":
             confidence = 0.2
