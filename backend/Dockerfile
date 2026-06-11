@@ -9,8 +9,9 @@ COPY backend/.env .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install the best spaCy English model (underscores, not hyphens!)
-RUN pip install --no-cache-dir en_core_web_lg
+# Install the best spaCy large model directly from GitHub (no PyPI issues)
+RUN pip install --no-cache-dir \
+    https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.7.0/en_core_web_lg-3.7.0.tar.gz
 
 COPY backend/app ./app
 
