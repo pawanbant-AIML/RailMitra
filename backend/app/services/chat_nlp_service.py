@@ -1,79 +1,39 @@
 """
-enhanced_chat_nlp_service.py  ── v2  (drop-in replacement for chat_nlp_service.py)
-═══════════════════════════════════════════════════════════════════════════════════
-
-SpaCy pipeline features used
-──────────────────────────────────────────────────────────────────────────────
-Feature                   │ Where                       │ Benefit
-──────────────────────────┼─────────────────────────────┼──────────────────────
-EntityRuler (STATION)     │ _setup_entity_ruler()        │ ~200 Indian stations
-  after="ner",            │ _extract_stations_from_doc() │ as named entities;
-  overwrite_ents=True,    │                              │ ent.kb_id_ = code
-  phrase_matcher_attr=    │                              │ (e.g. "SBC")
-  "LOWER"                 │                              │
-──────────────────────────┼─────────────────────────────┼──────────────────────
-Dependency Parser         │ _station_role_from_deps()    │ Resolves "from X"
-                          │                              │ vs "to Y" via
-                          │                              │ root.dep_ + head
-──────────────────────────┼─────────────────────────────┼──────────────────────
-PhraseMatcher  ×3         │ _setup_phrase_matchers()     │ Multi-word, case-free
-  - _intent_pm            │ _detect_intent()             │ phrase detection
-  - _class_pm             │ _extract_class_from_doc()    │
-  - _pref_pm              │ _extract_preference_from_doc │
-──────────────────────────┼─────────────────────────────┼──────────────────────
-Matcher (token patterns)  │ _setup_token_matchers()      │ Structural token-
-  - PASSENGER_COUNT       │ _extract_passengers_from_doc │ level patterns;
-  - BOOKING_ID            │ _extract_booking_id_from_doc │ robust to word order
-  - TRAIN_NUMBER          │ _extract_train_number_from.. │
-  - BUDGET                │ _extract_budget_from_doc()   │
-──────────────────────────┼─────────────────────────────┼──────────────────────
-Built-in NER  DATE        │ _extract_date_combined()     │ Catches "this
-                          │                              │ weekend", "next
-                          │                              │ month", etc.
-──────────────────────────┼─────────────────────────────┼──────────────────────
-Built-in NER  GPE / LOC   │ _extract_stations_from_gpe() │ Fallback for city
-                          │                              │ names not in our
-                          │                              │ dictionary
-──────────────────────────┼─────────────────────────────┼──────────────────────
-Word Vectors  (optional)  │ _intent_by_similarity()      │ Semantic intent
-  en_core_web_md / lg     │                              │ matching for
-  auto-detected           │                              │ out-of-vocab phrases
-══════════════════════════════════════════════════════════════════════════════
-
-Upgrade path:
-  pip install en-core-web-md   (60 MB, adds word vectors → better intent)
-  pip install en-core-web-lg   (750 MB, largest vectors)
-  The service auto-detects which model is installed and enables vector
-  similarity only when vectors are present (nlp.vocab.vectors.shape[0] > 0).
+Flexible Indian Railways conversational NLP service.
+Handles typos, abbreviations, corrections, and casual English chat.
+No Hinglish normalisation – only standard English processing.
 """
 
 from __future__ import annotations
 
 import re
+import unicodedata
+from dataclasses import dataclass
 from datetime import datetime, timedelta
+from difflib import get_close_matches
 from typing import Any, Dict, List, Optional, Tuple
 from zoneinfo import ZoneInfo
 
 import spacy
+from pydantic import BaseModel
 from spacy.matcher import Matcher, PhraseMatcher
 from spacy.tokens import Doc, Span
-from pydantic import BaseModel
 
+# =============================================================================
+# Schemas
+# =============================================================================
 
-# ═══════════════════════════════════════════════════════════════════════════
-# Schemas  (unchanged – backward compatible)
-# ═══════════════════════════════════════════════════════════════════════════
 
 class Entity(BaseModel):
     source: Optional[str] = None
     destination: Optional[str] = None
     via_stations: Optional[List[str]] = None
-    date: Optional[str] = None          # ISO-8601 YYYY-MM-DD
-    time: Optional[str] = None          # HH:MM  (24-h)
-    travel_class: Optional[str] = None  # SL / 2A / 3A / 1A / CC / 2S / GN / EC
+    date: Optional[str] = None
+    time: Optional[str] = None
+    travel_class: Optional[str] = None
     passengers: Optional[int] = None
     budget: Optional[float] = None
-    preference: Optional[str] = None    # fastest / cheapest / shortest
+    preference: Optional[str] = None
     train_number: Optional[str] = None
     booking_id: Optional[int] = None
 
@@ -96,279 +56,177 @@ class ChatAnalysisResponse(BaseModel):
     memory_patch: Optional[Dict[str, Any]] = None
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# Station Dictionary  (merged + expanded from both original service files)
-# Key  = city name / alias / station code  (always lowercase)
-# Value = canonical station code  (uppercase)
-# ═══════════════════════════════════════════════════════════════════════════
+# =============================================================================
+# Station dictionary / aliases (exhaustive but extendable)
+# =============================================================================
+
 
 STATION_ALIASES: Dict[str, str] = {
-    # ── Bengaluru / Karnataka ────────────────────────────────────────────
-    "bangalore": "SBC",         "bengaluru": "SBC",         "blr": "SBC",
-    "bangalore city": "SBC",    "ksr bengaluru": "SBC",     "sbc": "SBC",
-    "yesvantpur": "YPR",        "ypr": "YPR",
-    "bangalore cantonment": "BAND", "band": "BAND",
-    "mysore": "MYS",            "mysuru": "MYS",            "mys": "MYS",
-    "hubli": "UBL",             "hubballi": "UBL",          "ubl": "UBL",
-    "mangalore": "MAQ",         "mangaluru": "MAQ",         "maq": "MAQ",
-
-    # ── Mumbai / Maharashtra ─────────────────────────────────────────────
-    "mumbai": "CSMT",           "bombay": "CSMT",           "bom": "CSMT",
-    "csmt": "CSMT",             "cstm": "CSMT",             "vt": "CSMT",
-    "mumbai central": "BCT",    "bct": "BCT",
-    "lokmanya tilak terminus": "LTT", "ltt": "LTT",
-    "dadar": "DR",              "dr": "DR",
-    "bandra terminus": "BDTS",  "bdts": "BDTS",
-    "pune": "PUNE",             "puna": "PUNE",
-    "nashik": "NK",             "nasik": "NK",              "nk": "NK",
-    "nagpur": "NGP",            "ngp": "NGP",
-    "aurangabad": "AWB",        "awb": "AWB",
-    "kolhapur": "KOP",          "kop": "KOP",
-    "solapur": "SUR",           "sur": "SUR",
-    "akola": "AK",              "ak": "AK",
-    "amravati": "AMI",
-
-    # ── Delhi / Rajasthan / Punjab ───────────────────────────────────────
-    "delhi": "NDLS",            "new delhi": "NDLS",        "ndls": "NDLS",
-    "old delhi": "DLI",         "dli": "DLI",
-    "hazrat nizamuddin": "NZM", "nzm": "NZM",
-    "anand vihar": "ANVT",      "anvt": "ANVT",
-    "jaipur": "JP",             "jp": "JP",
-    "jodhpur": "JU",            "ju": "JU",
-    "udaipur": "UDZ",           "udz": "UDZ",
-    "kota": "KOTA",
-    "bikaner": "BKN",           "bkn": "BKN",
-    "ajmer": "AII",             "aii": "AII",
-    "agra": "AGC",              "agra cantt": "AGC",        "agc": "AGC",
-    "amritsar": "ASR",          "asr": "ASR",
-    "chandigarh": "CDG",        "cdg": "CDG",
-    "ludhiana": "LDH",          "ldh": "LDH",
-    "bathinda": "BTI",          "bti": "BTI",
-
-    # ── Chennai / Tamil Nadu ─────────────────────────────────────────────
-    "chennai": "MAS",           "madras": "MAS",            "mas": "MAS",
-    "chennai central": "MAS",
-    "chennai egmore": "MS",     "ms": "MS",
-    "coimbatore": "CBE",        "cbe": "CBE",
-    "madurai": "MDU",           "mdu": "MDU",
-    "tiruchirapalli": "TPJ",    "trichy": "TPJ",            "tpj": "TPJ",
-    "tirunelveli": "TEN",       "ten": "TEN",
-    "puducherry": "PDY",        "pondicherry": "PDY",       "pdy": "PDY",
-    "salem": "SA",              "sa": "SA",
-    "erode": "ED",              "ed": "ED",
-    "tirupati": "TPTY",         "tpty": "TPTY",
-    "chengalpattu": "CGL",
-    "vellore": "KPD",
-
-    # ── Kolkata / West Bengal / Odisha / NE ──────────────────────────────
-    "kolkata": "HWH",           "calcutta": "HWH",          "howrah": "HWH",
-    "hwh": "HWH",
-    "sealdah": "SDAH",          "sdah": "SDAH",
-    "asansol": "ASN",           "asn": "ASN",
-    "dhanbad": "DHN",           "dhn": "DHN",
-    "ranchi": "RNC",            "rnc": "RNC",
-    "jamshedpur": "TATA",       "tatanagar": "TATA",
-    "bhubaneswar": "BBS",       "bbs": "BBS",
-    "puri": "PURI",
-    "cuttack": "CTC",           "ctc": "CTC",
-    "new jalpaiguri": "NJP",    "njp": "NJP",
-    "siliguri": "SGUJ",
-    "guwahati": "GHY",          "gauhati": "GHY",           "ghy": "GHY",
-
-    # ── Hyderabad / Andhra Pradesh / Telangana ───────────────────────────
-    "hyderabad": "HYB",         "hyd": "HYB",               "hyb": "HYB",
-    "secunderabad": "SC",       "sc": "SC",
-    "kachiguda": "KCG",
-    "vijayawada": "BZA",        "bza": "BZA",
-    "visakhapatnam": "VSKP",    "vizag": "VSKP",            "vskp": "VSKP",
-    "guntur": "GNT",            "gnt": "GNT",
-    "rajahmundry": "RJY",       "rajamahendravaram": "RJY", "rjy": "RJY",
-    "kakinada": "CCT",          "cct": "CCT",
-    "tirupati": "TPTY",
-
-    # ── Gujarat ──────────────────────────────────────────────────────────
-    "ahmedabad": "ADI",         "amdavad": "ADI",           "adi": "ADI",
-    "vadodara": "BRC",          "baroda": "BRC",            "brc": "BRC",
-    "surat": "ST",              "st": "ST",
-    "rajkot": "RJT",            "rjt": "RJT",
-    "bhavnagar": "BVC",         "bvc": "BVC",
-    "gandhinagar": "GNC",
-
-    # ── Uttar Pradesh / Bihar ─────────────────────────────────────────────
-    "lucknow": "LKO",           "lko": "LKO",
-    "varanasi": "BSB",          "banaras": "BSB",
-    "kashi": "BSB",             "bsb": "BSB",
-    "patna": "PNBE",            "pnbe": "PNBE",
-    "prayagraj": "PRYJ",        "allahabad": "PRYJ",        "pryj": "PRYJ",
-    "gorakhpur": "GKP",         "gkp": "GKP",
-    "gaya": "GAYA",
-    "muzaffarpur": "MFP",       "mfp": "MFP",
-    "kanpur": "CNB",            "cawnpore": "CNB",          "cnb": "CNB",
-    "agra": "AGC",
-    "mathura": "MTJ",           "mtj": "MTJ",
-    "meerut": "MTC",
-    "bareilly": "BE",           "be": "BE",
-    "moradabad": "MB",
-
-    # ── Madhya Pradesh / Chhattisgarh ─────────────────────────────────────
-    "bhopal": "BPL",            "bpl": "BPL",
-    "gwalior": "GWL",           "gwl": "GWL",
-    "jabalpur": "JBP",          "jbp": "JBP",
-    "indore": "INDB",           "indb": "INDB",
-    "raipur": "R",
-    "bilaspur": "BSP",          "bsp": "BSP",
-
-    # ── Kerala ───────────────────────────────────────────────────────────
-    "kochi": "ERS",             "cochin": "ERS",
-    "ernakulam": "ERS",         "ers": "ERS",
-    "thiruvananthapuram": "TVC","trivandrum": "TVC",        "tvc": "TVC",
-    "kannur": "CAN",            "cannanore": "CAN",
-    "kozhikode": "CLT",         "calicut": "CLT",           "clt": "CLT",
-    "thrissur": "TCR",          "trichur": "TCR",           "tcr": "TCR",
-    "palakkad": "PGT",          "palghat": "PGT",           "pgt": "PGT",
-    "alleppey": "ALLP",         "alappuzha": "ALLP",        "allp": "ALLP",
-    "kollam": "QLN",            "quilon": "QLN",            "qln": "QLN",
-    "thrissur": "TCR",
+    "bangalore": "SBC", "bengaluru": "SBC", "blr": "SBC",
+    "bangalore city": "SBC", "ksr bengaluru": "SBC", "sbc": "SBC",
+    "yesvantpur": "YPR", "ypr": "YPR", "bangalore cantonment": "BAND", "band": "BAND",
+    "mysore": "MYS", "mysuru": "MYS", "mys": "MYS",
+    "hubli": "UBL", "hubballi": "UBL", "ubl": "UBL",
+    "mangalore": "MAQ", "mangaluru": "MAQ", "maq": "MAQ",
+    "mumbai": "CSMT", "bombay": "CSMT", "bom": "CSMT", "csmt": "CSMT",
+    "cstm": "CSMT", "vt": "CSMT", "mumbai central": "BCT", "bct": "BCT",
+    "lokmanya tilak terminus": "LTT", "ltt": "LTT", "dadar": "DR", "dr": "DR",
+    "bandra terminus": "BDTS", "bdts": "BDTS", "pune": "PUNE", "puna": "PUNE",
+    "nashik": "NK", "nasik": "NK", "nk": "NK", "nagpur": "NGP", "ngp": "NGP",
+    "aurangabad": "AWB", "awb": "AWB", "kolhapur": "KOP", "kop": "KOP",
+    "solapur": "SUR", "sur": "SUR", "akola": "AK", "ak": "AK", "amravati": "AMI",
+    "delhi": "NDLS", "new delhi": "NDLS", "ndls": "NDLS", "old delhi": "DLI",
+    "dli": "DLI", "hazrat nizamuddin": "NZM", "nzm": "NZM", "anand vihar": "ANVT",
+    "anvt": "ANVT", "jaipur": "JP", "jp": "JP", "jodhpur": "JU", "ju": "JU",
+    "udaipur": "UDZ", "udz": "UDZ", "kota": "KOTA", "bikaner": "BKN", "bkn": "BKN",
+    "ajmer": "AII", "aii": "AII", "agra": "AGC", "agra cantt": "AGC", "agc": "AGC",
+    "amritsar": "ASR", "asr": "ASR", "chandigarh": "CDG", "cdg": "CDG",
+    "ludhiana": "LDH", "ldh": "LDH", "bathinda": "BTI", "bti": "BTI",
+    "chennai": "MAS", "madras": "MAS", "mas": "MAS", "chennai central": "MAS",
+    "chennai egmore": "MS", "ms": "MS", "coimbatore": "CBE", "cbe": "CBE",
+    "madurai": "MDU", "mdu": "MDU", "tiruchirapalli": "TPJ", "trichy": "TPJ",
+    "tpj": "TPJ", "tirunelveli": "TEN", "ten": "TEN", "puducherry": "PDY",
+    "pondicherry": "PDY", "pdy": "PDY", "salem": "SA", "sa": "SA",
+    "erode": "ED", "ed": "ED", "tirupati": "TPTY", "tpty": "TPTY",
+    "chengalpattu": "CGL", "vellore": "KPD",
+    "kolkata": "HWH", "calcutta": "HWH", "howrah": "HWH", "hwh": "HWH",
+    "sealdah": "SDAH", "sdah": "SDAH", "asansol": "ASN", "asn": "ASN",
+    "dhanbad": "DHN", "dhn": "DHN", "ranchi": "RNC", "rnc": "RNC",
+    "jamshedpur": "TATA", "tatanagar": "TATA", "bhubaneswar": "BBS", "bbs": "BBS",
+    "puri": "PURI", "cuttack": "CTC", "ctc": "CTC", "new jalpaiguri": "NJP",
+    "njp": "NJP", "siliguri": "SGUJ", "guwahati": "GHY", "gauhati": "GHY", "ghy": "GHY",
+    "hyderabad": "HYB", "hyd": "HYB", "hyb": "HYB", "secunderabad": "SC", "sc": "SC",
+    "kachiguda": "KCG", "vijayawada": "BZA", "bza": "BZA", "visakhapatnam": "VSKP",
+    "vizag": "VSKP", "vskp": "VSKP", "guntur": "GNT", "gnt": "GNT",
+    "rajahmundry": "RJY", "rajamahendravaram": "RJY", "rjy": "RJY",
+    "kakinada": "CCT", "cct": "CCT", "tirupati": "TPTY",
+    "ahmedabad": "ADI", "amdavad": "ADI", "adi": "ADI", "vadodara": "BRC",
+    "baroda": "BRC", "brc": "BRC", "surat": "ST", "st": "ST", "rajkot": "RJT",
+    "rjt": "RJT", "bhavnagar": "BVC", "bvc": "BVC", "gandhinagar": "GNC",
+    "lucknow": "LKO", "lko": "LKO", "varanasi": "BSB", "banaras": "BSB",
+    "kashi": "BSB", "bsb": "BSB", "patna": "PNBE", "pnbe": "PNBE",
+    "prayagraj": "PRYJ", "allahabad": "PRYJ", "pryj": "PRYJ",
+    "gorakhpur": "GKP", "gkp": "GKP", "gaya": "GAYA", "muzaffarpur": "MFP",
+    "mfp": "MFP", "kanpur": "CNB", "cawnpore": "CNB", "cnb": "CNB",
+    "mathura": "MTJ", "mtj": "MTJ", "meerut": "MTC", "bareilly": "BE",
+    "be": "BE", "moradabad": "MB",
+    "bhopal": "BPL", "bpl": "BPL", "gwalior": "GWL", "gwl": "GWL",
+    "jabalpur": "JBP", "jbp": "JBP", "indore": "INDB", "indb": "INDB",
+    "raipur": "R", "bilaspur": "BSP", "bsp": "BSP",
+    "kochi": "ERS", "cochin": "ERS", "ernakulam": "ERS", "ers": "ERS",
+    "thiruvananthapuram": "TVC", "trivandrum": "TVC", "tvc": "TVC",
+    "kannur": "CAN", "cannanore": "CAN", "kozhikode": "CLT", "calicut": "CLT",
+    "clt": "CLT", "thrissur": "TCR", "trichur": "TCR", "tcr": "TCR",
+    "palakkad": "PGT", "palghat": "PGT", "pgt": "PGT", "alleppey": "ALLP",
+    "alappuzha": "ALLP", "allp": "ALLP", "kollam": "QLN", "quilon": "QLN", "qln": "QLN",
 }
-
-# ═══════════════════════════════════════════════════════════════════════════
-# Travel Class Aliases
-# Sorted longest-first so "ac first class" wins over "first" or "ac"
-# ═══════════════════════════════════════════════════════════════════════════
 
 CLASS_ALIASES: Dict[str, str] = {
-    "executive chair car": "EC",  "executive class": "EC",
-    "ac first class": "1A",       "ac 1st class": "1A",
-    "first ac": "1A",             "1st ac": "1A",       "ac first": "1A",
-    "second ac": "2A",            "2nd ac": "2A",       "ac 2nd class": "2A",
-    "2 tier ac": "2A",            "two tier ac": "2A",  "ac 2 tier": "2A",
-    "third ac": "3A",             "3rd ac": "3A",       "ac 3rd class": "3A",
-    "3 tier ac": "3A",            "three tier ac": "3A","ac three tier": "3A",
-    "ac chair car": "CC",         "chair car": "CC",
-    "second sitting": "2S",
-    "sleeper class": "SL",        "sleeper": "SL",
-    "general": "GN",              "unreserved": "GN",
-    "ec": "EC",
-    "1ac": "1A",  "1a": "1A",
-    "2ac": "2A",  "2a": "2A",
-    "3ac": "3A",  "3a": "3A",
-    "cc": "CC",
-    "2s": "2S",
-    "sl": "SL",
-    "gn": "GN",
-    "ac": "2A",   # bare "AC" defaults to 2A
+    "executive chair car": "EC", "executive class": "EC", "ac first class": "1A",
+    "ac 1st class": "1A", "first ac": "1A", "1st ac": "1A", "ac first": "1A",
+    "second ac": "2A", "2nd ac": "2A", "ac 2nd class": "2A", "2 tier ac": "2A",
+    "two tier ac": "2A", "ac 2 tier": "2A", "third ac": "3A", "3rd ac": "3A",
+    "ac 3rd class": "3A", "3 tier ac": "3A", "three tier ac": "3A",
+    "ac three tier": "3A", "ac chair car": "CC", "chair car": "CC",
+    "second sitting": "2S", "sleeper class": "SL", "sleeper": "SL",
+    "general": "GN", "unreserved": "GN", "ec": "EC", "1ac": "1A", "1a": "1A",
+    "2ac": "2A", "2a": "2A", "3ac": "3A", "3a": "3A", "cc": "CC",
+    "2s": "2S", "sl": "SL", "gn": "GN", "ac": "2A",
 }
-
-# ═══════════════════════════════════════════════════════════════════════════
-# Preference Phrases  → canonical preference label
-# ═══════════════════════════════════════════════════════════════════════════
 
 PREFERENCE_PHRASES: Dict[str, str] = {
-    "shortest route": "shortest",   "minimum stops": "shortest",
-    "fewest stops": "shortest",     "least stops": "shortest",
-    "shortest path": "shortest",
-    "cheapest route": "cheapest",   "cheapest train": "cheapest",
-    "least fare": "cheapest",       "budget friendly": "cheapest",
-    "low cost": "cheapest",         "most affordable": "cheapest",
-    "fastest route": "fastest",     "fastest train": "fastest",
-    "quickest route": "fastest",    "minimum time": "fastest",
-    "least time": "fastest",        "direct train": "fastest",
+    "shortest route": "shortest", "minimum stops": "shortest",
+    "fewest stops": "shortest", "least stops": "shortest", "shortest path": "shortest",
+    "cheapest route": "cheapest", "cheapest train": "cheapest",
+    "least fare": "cheapest", "budget friendly": "cheapest",
+    "low cost": "cheapest", "most affordable": "cheapest",
+    "fastest route": "fastest", "fastest train": "fastest",
+    "quickest route": "fastest", "minimum time": "fastest", "least time": "fastest",
+    "direct train": "fastest",
 }
-
-# ═══════════════════════════════════════════════════════════════════════════
-# Intent Phrase Groups  (PhraseMatcher keys)
-# ═══════════════════════════════════════════════════════════════════════════
 
 INTENT_PHRASES: Dict[str, List[str]] = {
-    "BOOKING_HISTORY": [
-        "show my bookings", "my bookings", "booking history",
-        "show my booking", "list bookings", "list my bookings",
-        "all my bookings", "view bookings", "show bookings",
-        "view my bookings", "my reservations",
-    ],
-    "CANCEL_BOOKING": [
-        "cancel booking", "cancel my booking", "cancel ticket",
-        "cancel my ticket", "cancel reservation", "cancellation",
-        "cancel", "i want to cancel",
-    ],
-    "BOOK_TICKET": [
-        "book ticket", "book tickets", "reserve ticket", "reserve tickets",
-        "buy ticket", "purchase ticket", "book me a ticket",
-        "i want a ticket", "i need a ticket", "get me a ticket",
-        "book a train", "book train", "i want to book",
-        "make a booking", "reserve a seat",
-    ],
-    "ROUTE_SEARCH": [
-        "find train", "find trains", "search train", "search trains",
+    "BOOKING_HISTORY": ["show my bookings", "my bookings", "booking history",
+        "show my booking", "list bookings", "list my bookings", "all my bookings",
+        "view bookings", "show bookings", "view my bookings", "my reservations"],
+    "CANCEL_BOOKING": ["cancel booking", "cancel my booking", "cancel ticket",
+        "cancel my ticket", "cancel reservation", "cancellation", "cancel",
+        "i want to cancel"],
+    "BOOK_TICKET": ["book ticket", "book tickets", "reserve ticket", "reserve tickets",
+        "buy ticket", "purchase ticket", "book me a ticket", "i want a ticket",
+        "i need a ticket", "get me a ticket", "book a train", "book train",
+        "i want to book", "make a booking", "reserve a seat"],
+    "ROUTE_SEARCH": ["find train", "find trains", "search train", "search trains",
         "trains from", "train from", "is there a train", "any train",
         "trains between", "train between", "show trains", "list trains",
-        "available trains", "find me a train", "trains to",
-        "what trains", "which trains", "any trains",
-    ],
-    "FARE_ESTIMATE": [
-        "fare from", "fare between", "fare to",
-        "how much does it cost", "how much is the fare",
-        "how much is the ticket", "what is the fare",
-        "ticket price", "check fare", "ticket cost",
-        "how much", "price from", "cost from",
-    ],
-    "COMPARE_ROUTES": [
-        "compare routes", "compare trains", "which is better",
-        "better route", "best route", "route comparison",
-    ],
-    "FASTEST_ROUTE":  ["fastest route", "quickest route", "fastest train", "quickest train"],
+        "available trains", "find me a train", "trains to", "what trains",
+        "which trains", "any trains"],
+    "FARE_ESTIMATE": ["fare from", "fare between", "fare to", "how much does it cost",
+        "how much is the fare", "how much is the ticket", "what is the fare",
+        "ticket price", "check fare", "ticket cost", "how much", "price from", "cost from"],
+    "COMPARE_ROUTES": ["compare routes", "compare trains", "which is better",
+        "better route", "best route", "route comparison"],
+    "FASTEST_ROUTE": ["fastest route", "quickest route", "fastest train", "quickest train"],
     "CHEAPEST_ROUTE": ["cheapest route", "cheapest train", "budget train", "low cost train"],
     "SHORTEST_ROUTE": ["shortest route", "fewest stops"],
-    "CHECK_ROUTE": [
-        "route for", "route for train", "show route", "check route",
+    "CHECK_ROUTE": ["route for", "route for train", "show route", "check route",
         "train route", "schedule for", "show schedule", "train stops",
-        "stations on", "where does train stop",
-    ],
+        "stations on", "where does train stop"],
 }
 
-# ═══════════════════════════════════════════════════════════════════════════
-# Required slots per intent  and  clarification questions per slot
-# ═══════════════════════════════════════════════════════════════════════════
-
 REQUIRED_SLOTS: Dict[str, List[str]] = {
-    "ROUTE_SEARCH":    ["source", "destination", "date"],
-    "BOOK_TICKET":     ["source", "destination", "date", "travel_class", "passengers"],
-    "FARE_ESTIMATE":   ["source", "destination"],
-    "CANCEL_BOOKING":  ["booking_id"],
-    "CHECK_ROUTE":     ["train_number"],
-    "SHORTEST_ROUTE":  ["source", "destination", "date"],
-    "CHEAPEST_ROUTE":  ["source", "destination", "date"],
-    "FASTEST_ROUTE":   ["source", "destination", "date"],
-    "COMPARE_ROUTES":  ["source", "destination"],
+    "ROUTE_SEARCH": ["source", "destination", "date"],
+    "BOOK_TICKET": ["source", "destination", "date", "travel_class", "passengers"],
+    "FARE_ESTIMATE": ["source", "destination"],
+    "CANCEL_BOOKING": ["booking_id"],
+    "CHECK_ROUTE": ["train_number"],
+    "SHORTEST_ROUTE": ["source", "destination", "date"],
+    "CHEAPEST_ROUTE": ["source", "destination", "date"],
+    "FASTEST_ROUTE": ["source", "destination", "date"],
+    "COMPARE_ROUTES": ["source", "destination"],
 }
 
 CLARIFICATION_QUESTIONS: Dict[str, str] = {
-    "source":        "Where are you traveling from?",
-    "destination":   "Where are you traveling to?",
-    "date":          "When do you want to travel? (e.g. tomorrow, 15 June, 20/06)",
-    "travel_class":  "Which class? (Sleeper, 3AC, 2AC, 1AC, Chair Car, 2S, GN)",
-    "passengers":    "How many passengers?",
-    "budget":        "What's your budget? (e.g. ₹1000)",
-    "booking_id":    "Please provide your Booking ID.",
-    "train_number":  "Please provide the train number.",
+    "source": "Where are you traveling from?",
+    "destination": "Where are you traveling to?",
+    "date": "When do you want to travel? (e.g. tomorrow, 15 June, 20/06)",
+    "travel_class": "Which class? (Sleeper, 3AC, 2AC, 1AC, Chair Car, 2S, GN)",
+    "passengers": "How many passengers?",
+    "budget": "What's your budget? (e.g. ₹1000)",
+    "booking_id": "Please provide your Booking ID.",
+    "train_number": "Please provide the train number.",
 }
 
+# =============================================================================
+# Helpers
+# =============================================================================
 
-# ═══════════════════════════════════════════════════════════════════════════
-# Enhanced NLP Service
-# ═══════════════════════════════════════════════════════════════════════════
+INDIAN_TIMEZONE = ZoneInfo("Asia/Kolkata")
+
+
+@dataclass
+class StationCandidate:
+    code: str
+    text: str
+    start: int
+    end: int
+    role: Optional[str] = None
+
 
 class ChatNLPService:
     """
-    Indian Railways conversational NLP service.
-    Uses SpaCy's full pipeline: EntityRuler, PhraseMatcher, Matcher,
-    dependency parser, and built-in NER.
+    Flexible Indian Railways conversational NLP service.
+
+    Improvements over a rigid parser:
+    - expands contractions (I'm -> I am) and chat abbreviations (pls -> please)
+    - handles typos with fuzzy matching on stations, classes, and intents
+    - detects corrections: "no, from Delhi" overwrites previous source
+    - richer entity extraction: "me and my friend" -> 2 passengers, "under ₹500" -> budget constraint
+    - hybrid intent detection: phrase matchers + keyword scoring + vector similarity
+    - robust date/time parser for casual expressions ("in 2 days", "this weekend")
     """
 
-    # ── Initialization ────────────────────────────────────────────────────
-
     def __init__(self) -> None:
-        # Try the largest available model for best vectors/parses
         self._has_vectors = False
         self.nlp = None
 
@@ -376,212 +234,163 @@ class ChatNLPService:
             try:
                 self.nlp = spacy.load(model_name)
                 self._has_vectors = self.nlp.vocab.vectors.shape[0] > 0
-                print(
-                    f"✅  SpaCy '{model_name}' loaded"
-                    f"  (vectors={'yes' if self._has_vectors else 'no — upgrade to md/lg for semantic intent'})"
-                )
                 break
             except OSError:
                 continue
 
         if self.nlp is None:
             raise RuntimeError(
-                "No SpaCy model found.\n"
-                "Install the smallest model with:  python -m spacy download en_core_web_sm\n"
-                "Or the best model with:           python -m spacy download en_core_web_md"
+                "No SpaCy model found. Install one with: python -m spacy download en_core_web_sm"
             )
 
-        # Pipeline additions
         self._setup_entity_ruler()
         self._setup_phrase_matchers()
         self._setup_token_matchers()
 
-        # Pre-compile the intent anchor docs used for vector similarity
         self._intent_anchors: Optional[Dict[str, Any]] = None
         if self._has_vectors:
             self._intent_anchors = {
                 intent: self.nlp(phrase)
                 for intent, phrase in {
-                    "ROUTE_SEARCH":    "find trains from one city to another",
-                    "BOOK_TICKET":     "book a train ticket",
-                    "CANCEL_BOOKING":  "cancel my booking reservation",
+                    "ROUTE_SEARCH": "find trains from one city to another",
+                    "BOOK_TICKET": "book a train ticket",
+                    "CANCEL_BOOKING": "cancel my booking reservation",
                     "BOOKING_HISTORY": "show all my bookings",
-                    "FARE_ESTIMATE":   "what is the fare price cost",
-                    "CHECK_ROUTE":     "show route stops for a train",
-                    "FARE_ESTIMATE":   "how much does the ticket cost fare",
+                    "FARE_ESTIMATE": "what is the fare price cost",
+                    "CHECK_ROUTE": "show route stops for a train",
+                    "COMPARE_ROUTES": "compare route options",
+                    "FASTEST_ROUTE": "fastest route with minimum time",
+                    "CHEAPEST_ROUTE": "cheapest route with minimum fare",
+                    "SHORTEST_ROUTE": "shortest route with fewest stops",
                 }.items()
             }
 
-    # ── SpaCy Pipeline: EntityRuler ────────────────────────────────────────
+        # Prepare fuzzy‑friendly lists for fallback intent matching
+        self._intent_keywords: Dict[str, List[str]] = {
+            intent: [re.sub(r"\s+", " ", p).lower() for p in phrases]
+            for intent, phrases in INTENT_PHRASES.items()
+        }
+        self._all_station_names = sorted(set(STATION_ALIASES.keys()), key=len, reverse=True)
+        self._all_station_codes = sorted(set(STATION_ALIASES.values()))
+        self._station_code_lookup = {v: v for v in self._all_station_codes}
+        self._class_names = sorted(CLASS_ALIASES.keys(), key=len, reverse=True)
+
+    # ------------------------------------------------------------------
+    # Setup
+    # ------------------------------------------------------------------
 
     def _setup_entity_ruler(self) -> None:
-        """
-        Register all Indian station names as STATION entities.
-
-        Placement: AFTER the built-in NER component with overwrite_ents=True.
-
-        Why after NER?
-          • NER runs first → adds GPE/LOC for city names, DATE for dates.
-          • EntityRuler runs second → upgrades known cities to STATION with
-            their precise station code in ent.kb_id_.
-          • Unknown cities remain as GPE/LOC (used as a fallback later).
-          • DATE entities are untouched since they have no STATION patterns.
-
-        phrase_matcher_attr="LOWER" makes all pattern matching case-insensitive,
-        so "BANGALORE", "Bangalore", and "bangalore" all resolve to "SBC".
-        """
         ruler = self.nlp.add_pipe(
             "entity_ruler",
             after="ner",
-            config={
-                "phrase_matcher_attr": "LOWER",
-                "overwrite_ents": True,   # STATION overwrites GPE for known cities
-            },
+            config={"phrase_matcher_attr": "LOWER", "overwrite_ents": True},
         )
-        patterns = [
+        ruler.add_patterns([
             {"label": "STATION", "pattern": alias, "id": code}
             for alias, code in STATION_ALIASES.items()
-        ]
-        ruler.add_patterns(patterns)
-
-    # ── SpaCy Pipeline: PhraseMatcher ─────────────────────────────────────
+        ])
 
     def _setup_phrase_matchers(self) -> None:
-        """
-        Three PhraseMatcher instances (attr="LOWER" → case-insensitive):
-
-        _intent_pm  – matches full intent phrases like "show my bookings".
-                      Returns the intent label (e.g. "BOOKING_HISTORY") directly.
-
-        _class_pm   – matches travel class aliases like "third ac", "chair car".
-                      Patterns sorted longest-first so "ac first class" wins
-                      over "first" or "ac".
-
-        _pref_pm    – matches route preference phrases like "shortest route".
-                      Returns the normalised label: fastest / cheapest / shortest.
-        """
-        # Intent phrases
         self._intent_pm = PhraseMatcher(self.nlp.vocab, attr="LOWER")
         for intent, phrases in INTENT_PHRASES.items():
             self._intent_pm.add(intent, [self.nlp.make_doc(p) for p in phrases])
 
-        # Class aliases (longest first → most-specific match wins)
         self._class_pm = PhraseMatcher(self.nlp.vocab, attr="LOWER")
         for alias in sorted(CLASS_ALIASES, key=len, reverse=True):
             self._class_pm.add(alias, [self.nlp.make_doc(alias)])
 
-        # Preference phrases
         self._pref_pm = PhraseMatcher(self.nlp.vocab, attr="LOWER")
         for phrase, pref_label in PREFERENCE_PHRASES.items():
-            # Use the label as the matcher key so the label is returned directly
             self._pref_pm.add(pref_label, [self.nlp.make_doc(phrase)])
 
-    # ── SpaCy Pipeline: Matcher (token patterns) ──────────────────────────
-
     def _setup_token_matchers(self) -> None:
-        """
-        SpaCy token-level Matcher for structured numerical patterns.
-
-        Patterns use token attributes (LIKE_NUM, IS_DIGIT, LOWER, LENGTH) so
-        they are robust to surrounding words and surface variations.
-
-        PASSENGER_COUNT     "2 tickets", "3 passengers"
-        PASSENGER_COUNT_FOR "for 4 people", "for 2 passengers"
-        PASSENGER_BOOK_N    "book 3", "reserve 2"
-        BOOKING_ID          "booking 5", "id 123", "cancel 7"
-        TRAIN_NUMBER        "train 12657", "train #12301"
-        BUDGET              "₹500", "rs 1000", "1500 rupees"
-        """
         m = Matcher(self.nlp.vocab)
 
-        _pax_nouns = [
+        pax_nouns = [
             "ticket", "tickets", "seat", "seats", "berth", "berths",
             "passenger", "passengers", "person", "people", "pax",
             "adult", "adults", "child", "children", "senior", "seniors",
         ]
-
-        # "2 tickets"  /  "3 passengers"
-        m.add("PASSENGER_COUNT", [
-            [{"LIKE_NUM": True}, {"LOWER": {"IN": _pax_nouns}}],
-        ])
-        # "for 3 passengers"
-        m.add("PASSENGER_COUNT_FOR", [
-            [{"LOWER": "for"}, {"LIKE_NUM": True}, {"LOWER": {"IN": _pax_nouns}}],
-        ])
-        # "book 2"  /  "reserve 3"
-        m.add("PASSENGER_BOOK_N", [
-            [{"LOWER": {"IN": ["book", "reserve"]}}, {"LIKE_NUM": True}],
-        ])
-
-        # "booking 5"  /  "booking id 123"  /  "cancel 7"  /  "# 99"
+        m.add("PASSENGER_COUNT", [[{"LIKE_NUM": True}, {"LOWER": {"IN": pax_nouns}}]])
+        m.add("PASSENGER_COUNT_FOR", [[{"LOWER": "for"}, {"LIKE_NUM": True}, {"LOWER": {"IN": pax_nouns}}]])
+        m.add("PASSENGER_BOOK_N", [[{"LOWER": {"IN": ["book", "reserve"]}}, {"LIKE_NUM": True}]])
         m.add("BOOKING_ID", [
             [{"LOWER": "booking"}, {"IS_DIGIT": True}],
             [{"LOWER": "booking"}, {"LOWER": "id"}, {"IS_DIGIT": True}],
             [{"LOWER": {"IN": ["cancel", "cancellation"]}}, {"IS_DIGIT": True}],
             [{"ORTH": "#"}, {"IS_DIGIT": True}],
         ])
-
-        # "train 12657"  /  "train #12301"
         m.add("TRAIN_NUMBER", [
             [{"LOWER": "train"}, {"IS_DIGIT": True, "LENGTH": {">=": 4, "<=": 6}}],
             [{"LOWER": "train"}, {"ORTH": "#"}, {"IS_DIGIT": True}],
         ])
-
-        # "₹ 500"  /  "rs 1000"  /  "inr 750"  /  "1500 rupees"
         m.add("BUDGET", [
             [{"ORTH": "₹"}, {"LIKE_NUM": True}],
             [{"LOWER": {"IN": ["rs", "rs.", "inr"]}}, {"LIKE_NUM": True}],
             [{"LIKE_NUM": True}, {"LOWER": {"IN": ["rupees", "inr"]}}],
         ])
+        # New: "under 500", "less than 500", "more than 500", "around 500"
+        m.add("BUDGET_UNDER", [[{"LOWER": {"IN": ["under", "below", "less", "upto", "within"]}}, {"LIKE_NUM": True}]])
+        m.add("BUDGET_ABOVE", [[{"LOWER": {"IN": ["above", "more", "over"]}}, {"LIKE_NUM": True}]])
+        m.add("BUDGET_AROUND", [[{"LOWER": {"IN": ["around", "approx", "approximately", "nearly", "about"]}}, {"LIKE_NUM": True}]])
+        # Group of people: "family of 4", "group of 5", "couple", "me and my friend"
+        m.add("PASSENGER_GROUP", [
+            [{"LOWER": {"IN": ["family", "group", "team", "gang"]}}, {"LOWER": "of"}, {"LIKE_NUM": True}],
+        ])
+        m.add("PASSENGER_ME_AND", [
+            [{"LOWER": "me"}, {"LOWER": "and"}, {"LOWER": {"IN": ["my", "friend", "wife", "husband", "brother", "sister", "friend"]}}],
+        ])
+        m.add("PASSENGER_COUPLE", [[{"LOWER": {"IN": ["couple", "pair"]}}]])
+        m.add("PASSENGER_WITH", [
+            [{"LOWER": "with"}, {"LOWER": {"IN": ["my", "a", "one"]}}, {"LOWER": "friend"}],
+            [{"LOWER": "with"}, {"LOWER": "my"}, {"LOWER": {"IN": ["family", "friends"]}}],
+        ])
 
         self._matcher = m
 
-    # ═════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------
     # Public API
-    # ═════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------
 
     def analyze(self, request: ChatAnalysisRequest) -> ChatAnalysisResponse:
-        """Main entry point. Processes the user message and returns full analysis."""
-        user_message = (request.user_message or "").strip()
-        history      = request.conversation_history or []
+        user_message = self._normalize_text(request.user_message or "")
+        # Expand casual English before NLP
+        user_message = self._expand_contractions(user_message)
+        user_message = self._expand_chat_abbreviations(user_message)
+        history = request.conversation_history or []
 
-        # 1. Build memory from conversation history
         memory = self._build_memory(history)
-
-        # 2. Run the full SpaCy pipeline on the ORIGINAL (non-lowercased) text.
-        #    Keeping original case gives the dependency parser the best chance
-        #    of correctly identifying proper nouns.
         doc = self.nlp(user_message)
-
-        # 3. Extract entities from current message (pre-filled from memory)
         current_entities = self._extract_entities_from_doc(doc, memory)
 
-        # 4. Merge memory + current entities into a single resolved context
-        resolved = self._merge_context(
-            memory,
-            current_entities.model_dump(exclude_none=True)
-        )
+        # Detect and apply corrections (e.g., "no, from Delhi")
+        corrections = self._detect_corrections(doc, memory)
+        resolved = self._merge_context(memory, current_entities.model_dump(exclude_none=True))
+        for slot, value in corrections.items():
+            resolved[slot] = value
+            # If correcting a station, remove the opposite station if ambiguous
+            if slot == "source" and "destination" in resolved:
+                resolved.pop("destination", None)
+            elif slot == "destination" and "source" in resolved:
+                resolved.pop("source", None)
+
         public = {k: v for k, v in resolved.items() if not k.startswith("_")}
 
-        # 5. Detect intent
         intent = self._detect_intent(doc, public, memory)
         if intent == "UNKNOWN":
             intent = self._infer_intent_from_context(doc, public, memory, current_entities)
 
-        # 6. Slot filling
         missing = self._check_missing_slots(intent, public)
         pending = memory.get("_pending_slot")
-        filled  = set(self._filled_slots(current_entities))
+        filled = set(self._filled_slots(current_entities))
         if pending and pending not in filled and pending not in missing:
             missing = [pending] + missing
 
-        clarification_needed   = bool(missing)
+        clarification_needed = bool(missing)
         clarification_question = CLARIFICATION_QUESTIONS.get(missing[0]) if missing else None
-
-        # 7. Build response
-        next_action    = self._determine_next_action(intent, clarification_needed)
+        next_action = self._determine_next_action(intent, clarification_needed)
         action_payload = self._build_action_payload(intent, public, next_action)
-        confidence     = self._calculate_confidence(intent, current_entities, missing)
+        confidence = self._calculate_confidence(intent, current_entities, missing)
 
         return ChatAnalysisResponse(
             intent=intent,
@@ -596,23 +405,78 @@ class ChatNLPService:
             memory_patch=current_entities.model_dump(exclude_none=True),
         )
 
-    # ═════════════════════════════════════════════════════════════════════
-    # Conversation Memory
-    # ═════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------
+    # Text normalisation & chat expansion
+    # ------------------------------------------------------------------
+
+    def _normalize_text(self, text: str) -> str:
+        text = unicodedata.normalize("NFKC", text)
+        text = text.replace("—", " ").replace("–", " ").replace("/", " / ")
+        text = text.replace("&", " and ")
+        text = re.sub(r"[\u200b\u200c\u200d\ufeff]", "", text)
+        text = re.sub(r"[?!]{2,}", lambda m: m.group(0)[0], text)  # collapse multiple ?! to one
+        text = re.sub(r"\s+", " ", text).strip().lower()
+        return text
+
+    def _expand_contractions(self, text: str) -> str:
+        """Expand common English contractions so spaCy can parse them."""
+        contractions = {
+            "i'm": "i am", "im": "i am", "you're": "you are", "youre": "you are",
+            "he's": "he is", "she's": "she is", "it's": "it is", "its": "it is",
+            "we're": "we are", "they're": "they are", "i've": "i have",
+            "you've": "you have", "we've": "we have", "they've": "they have",
+            "i'd": "i would", "you'd": "you would", "he'd": "he would",
+            "she'd": "she would", "we'd": "we would", "they'd": "they would",
+            "i'll": "i will", "you'll": "you will", "he'll": "he will",
+            "she'll": "she will", "we'll": "we will", "they'll": "they will",
+            "can't": "cannot", "cant": "cannot", "don't": "do not", "dont": "do not",
+            "won't": "will not", "wont": "will not", "shouldn't": "should not",
+            "couldn't": "could not", "wouldn't": "would not", "isn't": "is not",
+            "aren't": "are not", "doesn't": "does not", "wasn't": "was not",
+            "weren't": "were not", "hasn't": "has not", "haven't": "have not",
+            "hadn't": "had not", "mightn't": "might not", "mustn't": "must not",
+            "wanna": "want to", "gonna": "going to", "gotta": "got to",
+            "hafta": "have to", "needta": "need to", "coulda": "could have",
+            "woulda": "would have", "shoulda": "should have", "mighta": "might have",
+        }
+        pattern = re.compile(r'\b(' + '|'.join(re.escape(k) for k in contractions.keys()) + r')\b', re.IGNORECASE)
+        return pattern.sub(lambda m: contractions[m.group(0).lower()], text)
+
+    def _expand_chat_abbreviations(self, text: str) -> str:
+        """Expand common English chat abbreviations (no Hinglish)."""
+        abbreviations = {
+            "pls": "please", "plz": "please", "u": "you", "r": "are",
+            "ur": "your", "tmrw": "tomorrow", "2moro": "tomorrow",
+            "thx": "thanks", "ty": "thank you", "btw": "by the way",
+            "wt": "what", "ppl": "people", "msg": "message",
+            "idk": "i don't know", "np": "no problem", "y": "why",
+            "yup": "yes", "nope": "no", "lol": "", "omg": "",
+            "brb": "be right back", "gtg": "got to go", "ttyl": "talk to you later",
+            "idc": "i don't care", "tbh": "to be honest", "imo": "in my opinion",
+            "afk": "away from keyboard", "bff": "best friend forever",
+            "fyi": "for your information", "jk": "just kidding", "rofl": "",
+        }
+        pattern = re.compile(r'\b(' + '|'.join(re.escape(k) for k in abbreviations.keys()) + r')\b', re.IGNORECASE)
+        return pattern.sub(lambda m: abbreviations[m.group(0).lower()], text)
+
+    def _compact_text(self, text: str) -> str:
+        return re.sub(r"\s+", " ", self._normalize_text(text).lower()).strip()
+
+    # ------------------------------------------------------------------
+    # Memory / history
+    # ------------------------------------------------------------------
 
     def _build_memory(self, history: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """
-        Scan all previous messages and accumulate known entity values.
-        Also infers _pending_slot from the last assistant message so that
-        short follow-up replies ("tomorrow", "SL", "Mumbai") are resolved
-        in the correct slot context.
-        """
         memory: Dict[str, Any] = {}
         for msg in history:
-            role    = str(msg.get("role", ""))
-            content = str(msg.get("content", ""))
-            doc     = self.nlp(content)
+            role = str(msg.get("role", ""))
+            content = self._normalize_text(str(msg.get("content", "")))
+            content = self._expand_contractions(content)
+            content = self._expand_chat_abbreviations(content)
+            if not content:
+                continue
 
+            doc = self.nlp(content)
             src, dst = self._extract_stations_from_doc(doc, memory)
             if src:
                 memory["source"] = src
@@ -639,125 +503,148 @@ class ChatNLPService:
         return memory
 
     def _guess_pending_slot(self, assistant_text: str) -> Optional[str]:
-        """
-        Detect what slot the assistant was asking for in its last message
-        by scanning the text for characteristic question phrases.
-        """
-        text = assistant_text.lower()
+        text = self._compact_text(assistant_text)
         slot_signals: Dict[str, List[str]] = {
-            "source":       ["traveling from", "coming from", "source", "where are you from"],
-            "destination":  ["traveling to", "destination", "going to", "where do you want to go"],
-            "date":         ["when do you want", "travel date", "which date", "what date"],
+            "source": ["traveling from", "coming from", "source", "where are you from", "from where"],
+            "destination": ["traveling to", "destination", "going to", "where do you want to go", "to where"],
+            "date": ["when do you want", "travel date", "which date", "what date"],
             "travel_class": ["which class", "what class", "preferred class", "class would you"],
-            "passengers":   ["how many passengers", "how many tickets", "number of passengers"],
-            "budget":       ["your budget", "what's your budget"],
-            "booking_id":   ["booking id", "booking number"],
-            "train_number": ["train number", "which train"],
+            "passengers": ["how many passengers", "how many tickets", "number of passengers", "how many people"],
+            "budget": ["your budget", "what's your budget", "budget"],
+            "booking_id": ["booking id", "booking number", "id number"],
+            "train_number": ["train number", "which train", "train no"],
         }
         for slot, signals in slot_signals.items():
-            if any(s in text for s in signals):
+            if any(sig in text for sig in signals):
                 return slot
         return None
 
-    def _merge_context(
-        self,
-        base: Dict[str, Any],
-        patch: Dict[str, Any],
-    ) -> Dict[str, Any]:
+    def _merge_context(self, base: Dict[str, Any], patch: Dict[str, Any]) -> Dict[str, Any]:
         merged = dict(base)
         for key, value in patch.items():
             if value is not None:
                 merged[key] = value
         return merged
 
-    # ═════════════════════════════════════════════════════════════════════
-    # Intent Detection
-    # ═════════════════════════════════════════════════════════════════════
+    def _detect_corrections(self, doc: Doc, memory: Dict[str, Any]) -> Dict[str, str]:
+        """If user says 'no, from Delhi' or 'actually Mumbai', interpret as a correction."""
+        tokens = [t.lower_ for t in doc]
+        negations = {"no", "not", "nope", "nah", "actually", "wrong", "change", "instead", "correct"}
+        if not any(t in negations for t in tokens):
+            return {}
 
-    def _detect_intent(
-        self,
-        doc: Doc,
-        context: Dict[str, Any],
-        memory: Dict[str, Any],
-    ) -> str:
-        """
-        Three-layer intent detection:
-          1. PhraseMatcher  – exact multi-word phrase match (fastest, most precise)
-          2. Word vectors   – semantic similarity (only with en_core_web_md/lg)
-          3. Rule-based     – token-level keyword fallback
-        """
-        # ── Layer 1: PhraseMatcher ────────────────────────────────────────
-        # Process a lowercased copy for the phrase matcher
+        # Find station entities in the correction message
+        station_codes = []
+        for ent in doc.ents:
+            if ent.label_ == "STATION":
+                code = ent.kb_id_ or self._resolve_station_name(ent.text)
+                if code:
+                    station_codes.append((code, ent.root))
+        if not station_codes:
+            return {}
+
+        # Determine which slot we are likely correcting
+        pending = memory.get("_pending_slot")
+        if pending in ("source", "destination"):
+            return {pending: station_codes[0][0]}
+
+        # If no pending slot, check if the utterance contains 'from' or 'to'
+        for code, root in station_codes:
+            role = self._station_role_from_deps(root)  # will be None if no prep
+            if role in ("source", "destination"):
+                return {role: code}
+
+        # If ambiguous, fall back to the station that wasn't in memory
+        if memory.get("source") and not memory.get("destination"):
+            return {"destination": station_codes[0][0]}
+        if memory.get("destination") and not memory.get("source"):
+            return {"source": station_codes[0][0]}
+
+        return {}
+
+    # ------------------------------------------------------------------
+    # Intent detection (multi‑strategy)
+    # ------------------------------------------------------------------
+
+    def _detect_intent(self, doc: Doc, context: Dict[str, Any], memory: Dict[str, Any]) -> str:
+        # Strategy 1: PhraseMatcher
         doc_lower = self.nlp.make_doc(doc.text.lower())
         matches = self._intent_pm(doc_lower)
         if matches:
-            # Pick the match with the longest span (most specific phrase wins)
             best = max(matches, key=lambda m: m[2] - m[1])
             return self.nlp.vocab.strings[best[0]]
 
-        # ── Layer 2: Word-vector similarity (md / lg models only) ─────────
+        # Strategy 2: Vector similarity (if available)
         if self._has_vectors and self._intent_anchors:
             intent = self._intent_by_similarity(doc)
             if intent != "UNKNOWN":
                 return intent
 
-        # ── Layer 3: Rule-based token keywords ───────────────────────────
+        # Strategy 3: Fuzzy keyword scoring against lemmatised tokens
+        lemmas = {t.lemma_.lower() for t in doc if not t.is_stop and not t.is_punct}
+        best_intent = "UNKNOWN"
+        best_score = 0
+        for intent, phrases in self._intent_keywords.items():
+            score = 0
+            for phrase in phrases:
+                # Fuzzy match of the whole phrase (useful for typos)
+                if get_close_matches(doc.text.lower(), [phrase], n=1, cutoff=0.8):
+                    score += 1
+                # Also count individual keyword overlaps
+                phrase_words = set(re.findall(r"\w+", phrase))
+                if phrase_words & lemmas:
+                    score += 0.5
+            if score > best_score:
+                best_score = score
+                best_intent = intent
+        if best_score >= 1:
+            return best_intent
+
+        # Strategy 4: Rule‑based fallback (original token‑set logic)
         tokens_lower = {t.lower_ for t in doc}
         station_ents = [e for e in doc.ents if e.label_ == "STATION"]
 
-        if tokens_lower & {"cancel", "cancellation"}:
+        if tokens_lower & {"cancel", "cancellation", "void", "drop"}:
             return "CANCEL_BOOKING"
-        if tokens_lower & {"fare", "price", "cost"} and not tokens_lower & {"book", "reserve"}:
+        if tokens_lower & {"fare", "price", "cost", "amount"} and not tokens_lower & {"book", "reserve"}:
             return "FARE_ESTIMATE"
+        if tokens_lower & {"compare", "comparison", "better", "best"}:
+            return "COMPARE_ROUTES"
+        if tokens_lower & {"fastest", "quickest", "minimum time", "least time"}:
+            return "FASTEST_ROUTE"
+        if tokens_lower & {"cheapest", "budget", "low cost", "lowest fare", "affordable"}:
+            return "CHEAPEST_ROUTE"
+        if tokens_lower & {"shortest", "fewest", "least stops"}:
+            return "SHORTEST_ROUTE"
+        if tokens_lower & {"route", "schedule", "stops"} and any(ch.isdigit() for ch in doc.text):
+            return "CHECK_ROUTE"
         if len(station_ents) >= 2:
-            if tokens_lower & {"book", "reserve", "ticket", "tickets"}:
+            if tokens_lower & {"book", "reserve", "ticket", "tickets", "seat", "seats"}:
                 return "BOOK_TICKET"
             return "ROUTE_SEARCH"
-        if tokens_lower & {"book", "reserve"}:
+        if tokens_lower & {"book", "reserve", "ticket", "tickets", "seat", "seats"}:
             return "BOOK_TICKET"
-        if "route" in tokens_lower or "schedule" in tokens_lower:
-            return "CHECK_ROUTE"
+        if tokens_lower & {"route", "schedule", "train"}:
+            return "ROUTE_SEARCH"
 
         return "UNKNOWN"
 
     def _intent_by_similarity(self, doc: Doc) -> str:
-        """
-        Semantic intent classification using cosine similarity between word
-        vectors.  Only active when en_core_web_md or en_core_web_lg is used.
-
-        Computes similarity between the user's message doc and pre-computed
-        anchor phrase docs for each intent. The intent whose anchor is most
-        similar is returned if it exceeds a conservative threshold (0.62).
-        """
         best_intent = "UNKNOWN"
-        best_score  = 0.62   # conservative threshold to avoid false positives
-
+        best_score = 0.62
         for intent, anchor_doc in self._intent_anchors.items():
             score = doc.similarity(anchor_doc)
             if score > best_score:
-                best_score  = score
+                best_score = score
                 best_intent = intent
-
         return best_intent
 
-    def _infer_intent_from_context(
-        self,
-        doc: Doc,
-        context: Dict[str, Any],
-        memory: Dict[str, Any],
-        entities: Entity,
-    ) -> str:
-        """
-        When intent is still UNKNOWN and we have partial route context from
-        memory, infer whether the user is continuing a booking or search flow.
-        """
+    def _infer_intent_from_context(self, doc: Doc, context: Dict[str, Any], memory: Dict[str, Any], entities: Entity) -> str:
         has_route = bool(context.get("source") and context.get("destination"))
         if not has_route:
             return "UNKNOWN"
-
         tokens_lower = {t.lower_ for t in doc}
-        book_words   = {"book", "reserve", "ticket", "tickets", "confirm", "booking"}
-
+        book_words = {"book", "reserve", "ticket", "tickets", "confirm", "booking", "seat"}
         booking_signals = [
             context.get("travel_class"),
             context.get("passengers"),
@@ -768,8 +655,7 @@ class ChatNLPService:
         ]
         if any(booking_signals):
             return "BOOK_TICKET"
-
-        time_words = {"today", "tomorrow", "yesterday", "morning", "evening", "night", "week"}
+        time_words = {"today", "tomorrow", "yesterday", "morning", "evening", "night", "week", "noon"}
         date_signals = [
             context.get("date"),
             entities.date,
@@ -778,30 +664,19 @@ class ChatNLPService:
         ]
         if any(date_signals):
             return "ROUTE_SEARCH"
-
         return "UNKNOWN"
 
-    # ═════════════════════════════════════════════════════════════════════
-    # Entity Extraction
-    # ═════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------
+    # Entity extraction
+    # ------------------------------------------------------------------
 
-    def _extract_entities_from_doc(
-        self,
-        doc: Doc,
-        memory: Dict[str, Any],
-    ) -> Entity:
-        """
-        Build an Entity object from a processed SpaCy Doc.
-        Pre-populate from memory so short follow-up replies carry context
-        (e.g. the user says "tomorrow" after being asked for a date).
-        Each extractor overwrites the default only if it finds a new value.
-        """
+    def _extract_entities_from_doc(self, doc: Doc, memory: Dict[str, Any]) -> Entity:
         ent = Entity(
-            source       = memory.get("source"),
-            destination  = memory.get("destination"),
-            date         = memory.get("date"),
-            travel_class = memory.get("travel_class"),
-            passengers   = memory.get("passengers"),
+            source=memory.get("source"),
+            destination=memory.get("destination"),
+            date=memory.get("date"),
+            travel_class=memory.get("travel_class"),
+            passengers=memory.get("passengers"),
         )
 
         src, dst = self._extract_stations_from_doc(doc, memory)
@@ -848,38 +723,20 @@ class ChatNLPService:
 
         return ent
 
-    # ── Stations ──────────────────────────────────────────────────────────
+    # ------------------------------------------------------------------
+    # Station extraction (unchanged core, just used by new correction logic)
+    # ------------------------------------------------------------------
 
-    def _extract_stations_from_doc(
-        self,
-        doc: Doc,
-        context: Dict[str, Any],
-    ) -> Tuple[Optional[str], Optional[str]]:
-        """
-        Four-strategy station extraction:
+    def _extract_stations_from_doc(self, doc: Doc, context: Dict[str, Any]) -> Tuple[Optional[str], Optional[str]]:
+        source: Optional[str] = None
+        destination: Optional[str] = None
 
-        Strategy 1  EntityRuler entities + dependency tree role resolution.
-                    Walk ent.root.dep_ and ent.root.head to decide
-                    "from Bangalore" → source  vs  "to Mumbai" → destination.
-
-        Strategy 2  Regex on raw text for "from X to Y" / "between X and Y"
-                    (handles cases where the dependency parser mis-labels
-                    proper nouns).
-
-        Strategy 3  Single STATION entity resolved via _pending_slot context
-                    (short follow-up like just "Mumbai" after being asked
-                    for the destination).
-
-        Strategy 4  GPE/LOC entity fallback for city names not in our
-                    dictionary (uses SpaCy's built-in NER).
-        """
-        source: Optional[str]     = None
-        destination: Optional[str]= None
-
-        # ── Strategy 1: EntityRuler STATION entities + dep tree ───────────
         station_ents = [e for e in doc.ents if e.label_ == "STATION"]
+        candidate_codes = [self._resolve_station_name(e.text) or e.kb_id_ for e in station_ents]
+        candidate_codes = [c for c in candidate_codes if c]
+
         for ent in station_ents:
-            code = ent.kb_id_ or STATION_ALIASES.get(ent.text.lower())
+            code = ent.kb_id_ or self._resolve_station_name(ent.text)
             if not code:
                 continue
             role = self._station_role_from_deps(ent)
@@ -887,9 +744,7 @@ class ChatNLPService:
                 source = code
             elif role == "destination" and destination is None:
                 destination = code
-            # "via" is handled separately in _extract_via_stations_from_doc
 
-        # ── Strategy 2: Regex fallback ────────────────────────────────────
         if source is None or destination is None:
             src_r, dst_r = self._extract_stations_regex(doc.text)
             if source is None and src_r:
@@ -897,38 +752,23 @@ class ChatNLPService:
             if destination is None and dst_r:
                 destination = dst_r
 
-        # ── Strategy 3: Single unassigned entity + context ────────────────
-        if source is None and destination is None and len(station_ents) == 1:
-            code = (
-                station_ents[0].kb_id_
-                or STATION_ALIASES.get(station_ents[0].text.lower())
-            )
-            if code:
-                pending = context.get("_pending_slot")
-                if pending == "source":
-                    source = code
-                elif pending == "destination":
-                    destination = code
-                elif context.get("source") and not context.get("destination"):
-                    destination = code
-                elif context.get("destination") and not context.get("source"):
-                    source = code
+        if source is None and destination is None and len(candidate_codes) == 1:
+            code = candidate_codes[0]
+            pending = context.get("_pending_slot")
+            if pending == "source":
+                source = code
+            elif pending == "destination":
+                destination = code
+            elif context.get("source") and not context.get("destination"):
+                destination = code
+            elif context.get("destination") and not context.get("source"):
+                source = code
 
-        # ── Strategy 4: Two unassigned entities → position order ──────────
-        if source is None and destination is None and len(station_ents) >= 2:
-            codes = [
-                e.kb_id_ or STATION_ALIASES.get(e.text.lower())
-                for e in station_ents[:2]
-            ]
-            codes = [c for c in codes if c]
-            if len(codes) == 2:
-                source, destination = codes[0], codes[1]
+        if source is None and destination is None and len(candidate_codes) >= 2:
+            source, destination = candidate_codes[0], candidate_codes[1]
 
-        # ── Strategy 5: GPE/LOC fallback ──────────────────────────────────
         if source is None or destination is None:
-            gpe_src, gpe_dst = self._extract_stations_from_gpe(
-                doc, source, destination
-            )
+            gpe_src, gpe_dst = self._extract_stations_from_gpe(doc, source, destination)
             if source is None:
                 source = gpe_src
             if destination is None:
@@ -937,32 +777,7 @@ class ChatNLPService:
         return source, destination
 
     def _station_role_from_deps(self, ent: Span) -> Optional[str]:
-        """
-        Walk the syntactic dependency tree to determine the role of a
-        STATION entity span.
-
-        Common dependency patterns produced by SpaCy en_core_web_*:
-
-          "from Bangalore"          root.dep_=pobj,  root.head.lower_="from"
-                                    → source
-
-          "to Mumbai"               root.dep_=pobj,  root.head.lower_="to"
-                                    → destination
-
-          "between Pune and Hyd"    Pune: root.dep_=pobj, head.lower_="between"
-                                    Hyderabad: root.dep_=conj, head=Pune
-                                    → source / destination respectively
-
-          "via Nagpur"              root.dep_=pobj,  root.head.lower_="via"
-                                    → via
-
-          "Bangalore to Mumbai"     Bangalore: may have dep_=nsubj / compound
-                                    Mumbai: root.dep_=pobj, head.lower_="to"
-                                    → Bangalore unresolved by deps (caught
-                                       by Strategy 2 regex), Mumbai = destination
-        """
         root = ent.root
-
         if root.dep_ == "pobj":
             prep = root.head.lower_
             if prep == "from":
@@ -972,53 +787,22 @@ class ChatNLPService:
             if prep in ("via", "through", "passing"):
                 return "via"
             if prep == "between":
-                return "source"   # first of "between X and Y"
-
-        # Second argument of "between X and Y"
-        # Hyderabad: dep_=conj, head=Pune (which is dep_=pobj of "between")
+                return "source"
         if root.dep_ == "conj":
             conj_head = root.head
-            if (
-                conj_head.dep_ == "pobj"
-                and conj_head.head.lower_ == "between"
-            ):
+            if conj_head.dep_ == "pobj" and conj_head.head.lower_ == "between":
                 return "destination"
-
         return None
 
-    def _extract_stations_from_gpe(
-        self,
-        doc: Doc,
-        known_source: Optional[str],
-        known_destination: Optional[str],
-    ) -> Tuple[Optional[str], Optional[str]]:
-        """
-        SpaCy's built-in NER often tags city names as GPE (geopolitical entity)
-        or LOC even if they are not in our STATION_ALIASES dictionary.
-        This method attempts to resolve those GPE/LOC spans to station codes
-        via substring matching and uses the dependency tree to assign roles.
-        """
+    def _extract_stations_from_gpe(self, doc: Doc, known_source: Optional[str], known_destination: Optional[str]) -> Tuple[Optional[str], Optional[str]]:
         source = None
         destination = None
-
         for ent in doc.ents:
             if ent.label_ not in ("GPE", "LOC"):
                 continue
-            city = ent.text.lower()
-
-            # Direct match first
-            code = STATION_ALIASES.get(city)
-            if not code:
-                # Substring / partial match (longest alias wins)
-                best_len = 0
-                for alias, c in STATION_ALIASES.items():
-                    if (alias in city or city in alias) and len(alias) > best_len:
-                        code = c
-                        best_len = len(alias)
-
+            code = self._resolve_station_name(ent.text)
             if not code:
                 continue
-
             root = ent.root
             if root.dep_ == "pobj":
                 prep = root.head.lower_
@@ -1026,135 +810,141 @@ class ChatNLPService:
                     source = code
                 elif prep in ("to", "towards") and known_destination is None and destination is None:
                     destination = code
-
         return source, destination
 
     def _extract_via_stations_from_doc(self, doc: Doc) -> Optional[List[str]]:
-        """Extract via/through stops using the EntityRuler STATION entities."""
         via: List[str] = []
         for ent in doc.ents:
             if ent.label_ != "STATION":
                 continue
-            role = self._station_role_from_deps(ent)
-            if role == "via":
-                code = ent.kb_id_ or STATION_ALIASES.get(ent.text.lower())
+            if self._station_role_from_deps(ent) == "via":
+                code = ent.kb_id_ or self._resolve_station_name(ent.text)
                 if code:
                     via.append(code)
         return via if via else None
 
-    def _extract_stations_regex(
-        self,
-        text: str,
-    ) -> Tuple[Optional[str], Optional[str]]:
-        """
-        Regex fallback when the dependency parser does not cleanly assign
-        pobj roles.  Handles the most common surface patterns.
-        """
-        msg = text.lower()
+    def _extract_stations_regex(self, text: str) -> Tuple[Optional[str], Optional[str]]:
+        msg = self._compact_text(text)
         source = destination = None
 
-        # "between X and Y"
-        m = re.search(
-            r"between\s+([a-z\s]{2,25}?)\s+and\s+([a-z\s]{2,25?})"
-            r"(?:\s+(?:via|on|for|at|tomorrow|today)|[,.]|$)",
-            msg,
-        )
+        m = re.search(r"between\s+([a-z\s]{2,40}?)\s+and\s+([a-z\s]{2,40}?)(?:\s+(?:via|on|for|at|tomorrow|today)|[,.]|$)", msg)
         if m:
-            source      = self._resolve_station_name(m.group(1).strip())
+            source = self._resolve_station_name(m.group(1).strip())
             destination = self._resolve_station_name(m.group(2).strip())
             if source and destination:
                 return source, destination
 
-        # "from X to Y"
-        m = re.search(
-            r"from\s+([a-z\s]{2,25?}?)\s+to\s+([a-z\s]{2,25?})"
-            r"(?:\s+(?:via|on|for|at|tomorrow|today|in|by)|[,.]|$)",
-            msg,
-        )
+        m = re.search(r"from\s+([a-z\s]{2,40}?)\s+to\s+([a-z\s]{2,40}?)(?:\s+(?:via|on|for|at|tomorrow|today|in|by)|[,.]|$)", msg)
         if m:
-            source      = self._resolve_station_name(m.group(1).strip())
+            source = self._resolve_station_name(m.group(1).strip())
             destination = self._resolve_station_name(m.group(2).strip())
             if source and destination:
                 return source, destination
 
-        # "X to Y"  (bare form, e.g. "Bangalore to Mumbai trains")
         if " to " in msg:
             left, right = msg.split(" to ", 1)
-            left_words  = left.split()[-3:]   # last 3 tokens of left side
-            right_words = right.split()[:3]   # first 3 tokens of right side
+            left_words = left.split()[-4:]
+            right_words = right.split()[:4]
             src_c = self._resolve_station_name(" ".join(left_words))
-            dst_c = self._resolve_station_name(right_words[0] if right_words else "")
+            dst_c = self._resolve_station_name(" ".join(right_words))
             if src_c and dst_c:
                 return src_c, dst_c
 
         return None, None
 
     def _resolve_station_name(self, name: str) -> Optional[str]:
-        """
-        Map a raw string to a station code.
-        Priority: exact alias match → substring match → raw code.
-        """
-        name = name.strip().lower()
+        name = self._compact_text(name)
         if not name:
             return None
         if name in STATION_ALIASES:
             return STATION_ALIASES[name]
-        # Longest-prefix substring match
-        best_code, best_len = None, 0
-        for alias, code in STATION_ALIASES.items():
-            if alias in name and len(alias) > best_len:
-                best_code, best_len = code, len(alias)
-        if best_code:
-            return best_code
-        # Raw station code pattern  (2-6 capital letters)
         upper = re.sub(r"\s+", "", name).upper()
+        if upper in self._station_code_lookup:
+            return upper
         if re.fullmatch(r"[A-Z]{2,6}", upper):
             return upper
+        best_code = None
+        best_len = 0
+        for alias, code in STATION_ALIASES.items():
+            if alias in name or name in alias:
+                if len(alias) > best_len:
+                    best_len = len(alias)
+                    best_code = code
+        if best_code:
+            return best_code
+        best_match = get_close_matches(name, self._all_station_names, n=1, cutoff=0.84)
+        if best_match:
+            return STATION_ALIASES[best_match[0]]
         return None
 
-    # ── Travel Class ──────────────────────────────────────────────────────
+    # ------------------------------------------------------------------
+    # Class / preference
+    # ------------------------------------------------------------------
 
     def _extract_class_from_doc(self, doc: Doc) -> Optional[str]:
-        """
-        Use the PhraseMatcher (_class_pm) to find class aliases.
-        Patterns are registered longest-first, so "third ac" wins over bare "ac".
-        Returns the canonical class code (SL, 3A, 2A, etc.).
-        """
+        # 1. Exact phrase matcher
         doc_lower = self.nlp.make_doc(doc.text.lower())
         matches = self._class_pm(doc_lower)
-        if not matches:
-            return None
-        best = max(matches, key=lambda m: m[2] - m[1])
-        phrase = self.nlp.vocab.strings[best[0]]   # e.g. "third ac"
-        return CLASS_ALIASES.get(phrase)
+        if matches:
+            best = max(matches, key=lambda m: m[2] - m[1])
+            phrase = self.nlp.vocab.strings[best[0]]
+            return CLASS_ALIASES.get(phrase)
 
-    # ── Passengers ────────────────────────────────────────────────────────
+        # 2. Fuzzy sliding window over tokens
+        tokens = [t.text.lower() for t in doc if not t.is_punct and not t.is_space]
+        for window_size in (3, 2, 1):
+            for i in range(len(tokens) - window_size + 1):
+                candidate = " ".join(tokens[i:i+window_size])
+                match = get_close_matches(candidate, self._class_names, n=1, cutoff=0.85)
+                if match:
+                    return CLASS_ALIASES[match[0]]
+
+        # 3. Simple keyword in text
+        text = self._compact_text(doc.text)
+        for alias in self._class_names:
+            if alias in text:
+                return CLASS_ALIASES[alias]
+        return None
+
+    def _extract_preference_from_doc(self, doc: Doc) -> Optional[str]:
+        doc_lower = self.nlp.make_doc(doc.text.lower())
+        matches = self._pref_pm(doc_lower)
+        if matches:
+            best = max(matches, key=lambda m: m[2] - m[1])
+            return self.nlp.vocab.strings[best[0]]
+        text = self._compact_text(doc.text)
+        if any(k in text for k in ["fast", "quick", "soonest"]):
+            return "fastest"
+        if any(k in text for k in ["cheap", "low cost", "budget", "affordable", "less fare"]):
+            return "cheapest"
+        if any(k in text for k in ["short", "fewest stops", "least stops"]):
+            return "shortest"
+        return None
+
+    # ------------------------------------------------------------------
+    # Passengers / booking / train / budget (enriched)
+    # ------------------------------------------------------------------
 
     def _extract_passengers_from_doc(self, doc: Doc) -> Optional[int]:
-        """
-        Two-phase passenger count extraction:
-          Phase 1  – SpaCy Matcher for structural token patterns.
-          Phase 2  – Regex fallback for patterns Matcher may miss.
-        Also handles written numbers ("two tickets" → 2).
-        """
-        WORD_NUMS = {
+        text = self._compact_text(doc.text)
+        word_nums = {
             "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
             "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
-            "eleven": 11, "twelve": 12,
+            "eleven": 11, "twelve": 12, "a": 1, "an": 1,
         }
-        PAX_NOUNS = {
+        pax_nouns = {
             "ticket", "tickets", "seat", "seats", "berth", "berths",
             "passenger", "passengers", "person", "people", "pax",
         }
 
-        # Written numbers + passenger noun
-        for token in doc:
-            if token.lower_ in WORD_NUMS:
-                nxt = doc[token.i + 1] if token.i + 1 < len(doc) else None
-                if nxt and nxt.lower_ in PAX_NOUNS:
-                    return WORD_NUMS[token.lower_]
+        # Numeric + noun
+        for i, token in enumerate(doc):
+            if token.lower_ in word_nums:
+                nxt = doc[i + 1] if i + 1 < len(doc) else None
+                if nxt and nxt.lower_ in pax_nouns:
+                    return word_nums[token.lower_]
 
-        # SpaCy Matcher token patterns
+        # Custom matcher patterns (including new group/couple patterns)
         matches = self._matcher(doc)
         for match_id, start, end in matches:
             label = self.nlp.vocab.strings[match_id]
@@ -1164,35 +954,123 @@ class ChatNLPService:
                         n = int(token.text)
                         if 1 <= n <= 20:
                             return n
+            elif label == "PASSENGER_GROUP":
+                # "family of 4"
+                for token in doc[start:end]:
+                    if token.like_num and token.text.isdigit():
+                        n = int(token.text)
+                        if 1 <= n <= 20:
+                            return n
+            elif label == "PASSENGER_ME_AND":
+                return 2  # "me and my friend"
+            elif label == "PASSENGER_COUPLE":
+                return 2
+            elif label == "PASSENGER_WITH":
+                # "with my friend" -> 2, "with my family" -> ambiguous, assume 2
+                return 2
 
-        # Regex fallback
-        text = doc.text.lower()
-        regex_patterns = [
-            r"\b(\d+)\s+(?:ticket|tickets|seat|seats|berth|berths|passenger|passengers|person|people|pax)\b",
-            r"\bfor\s+(\d+)\s+(?:passengers?|persons?|people|pax|tickets?)\b",
-            r"\bbook\s+(\d+)\b",
-            r"\breserve\s+(\d+)\b",
-        ]
-        for pat in regex_patterns:
-            match = re.search(pat, text)
-            if match:
-                n = int(match.group(1))
-                if 1 <= n <= 20:
-                    return n
-
+        # Common chat shortcuts
+        m = re.search(r"\b(\d+)\s*(?:pax|people|persons?|passengers?|tickets?|seats?)\b", text)
+        if m:
+            n = int(m.group(1))
+            if 1 <= n <= 20:
+                return n
+        m = re.search(r"\b(?:for|book|reserve)\s+(\d+)\b", text)
+        if m:
+            n = int(m.group(1))
+            if 1 <= n <= 20:
+                return n
         return None
 
-    # ── Date ──────────────────────────────────────────────────────────────
+    def _extract_booking_id_from_doc(self, doc: Doc) -> Optional[int]:
+        matches = self._matcher(doc)
+        for match_id, start, end in matches:
+            if self.nlp.vocab.strings[match_id] == "BOOKING_ID":
+                for token in doc[start:end]:
+                    if token.is_digit:
+                        return int(token.text)
+        text = self._compact_text(doc.text)
+        patterns = [
+            r"booking\s*(?:id|#|no\.?|number)?\s*:?[\s#-]*(\d+)",
+            r"(?:cancel|cancellation|void|drop)\s+(?:booking\s*)?(\d+)",
+            r"(?:my\s*)?booking\s*(\d+)",
+        ]
+        for pat in patterns:
+            m = re.search(pat, text)
+            if m:
+                return int(m.group(1))
+        return None
+
+    def _extract_train_number_from_doc(self, doc: Doc) -> Optional[str]:
+        matches = self._matcher(doc)
+        for match_id, start, end in matches:
+            if self.nlp.vocab.strings[match_id] == "TRAIN_NUMBER":
+                for token in doc[start:end]:
+                    if token.is_digit and 4 <= len(token.text) <= 6:
+                        return token.text
+        text = self._compact_text(doc.text)
+        if any(k in text for k in ["train", "route", "schedule", "nr", "no"]):
+            m = re.search(r"\b(\d{4,6})\b", text)
+            if m:
+                return m.group(1)
+        return None
+
+    def _extract_budget_from_doc(self, doc: Doc) -> Optional[float]:
+        matches = self._matcher(doc)
+        budget_value = None
+        budget_modifier = "exact"  # under, above, around
+
+        for match_id, start, end in matches:
+            label = self.nlp.vocab.strings[match_id]
+            if label == "BUDGET":
+                for token in doc[start:end]:
+                    if token.like_num:
+                        try:
+                            budget_value = float(token.text.replace(",", ""))
+                        except ValueError:
+                            pass
+            elif label == "BUDGET_UNDER":
+                budget_modifier = "under"
+                for token in doc[start:end]:
+                    if token.like_num:
+                        try:
+                            budget_value = float(token.text.replace(",", ""))
+                        except ValueError:
+                            pass
+            elif label == "BUDGET_ABOVE":
+                budget_modifier = "above"
+                for token in doc[start:end]:
+                    if token.like_num:
+                        try:
+                            budget_value = float(token.text.replace(",", ""))
+                        except ValueError:
+                            pass
+            elif label == "BUDGET_AROUND":
+                budget_modifier = "around"
+                for token in doc[start:end]:
+                    if token.like_num:
+                        try:
+                            budget_value = float(token.text.replace(",", ""))
+                        except ValueError:
+                            pass
+
+        if budget_value is None:
+            text = self._compact_text(doc.text)
+            for pat in (r"[₹$]\s*(\d[\d,]*(?:\.\d+)?)", r"\b(\d[\d,]*)\s*(?:rupees?|inr|rs\.?|rs)\b"):
+                m = re.search(pat, text)
+                if m:
+                    budget_value = float(m.group(1).replace(",", ""))
+                    break
+
+        # For now, we return the raw value; the modifier can be used later (e.g., in action payload)
+        # We'll ignore the modifier and just return the number.
+        return budget_value
+
+    # ------------------------------------------------------------------
+    # Date / time (extended relative expressions)
+    # ------------------------------------------------------------------
 
     def _extract_date_combined(self, doc: Doc) -> Optional[str]:
-        """
-        Combine SpaCy DATE entities with regex.
-
-        SpaCy DATE entities are tried first because they catch relative
-        expressions that regex alone might miss ("this coming Friday",
-        "next week", "this weekend").  The regex handles Indian formats
-        (DD/MM/YYYY, "15 June 2026") that SpaCy may not normalise.
-        """
         for ent in doc.ents:
             if ent.label_ == "DATE":
                 parsed = self._parse_spacy_date_text(ent.text)
@@ -1201,13 +1079,13 @@ class ChatNLPService:
         return self._extract_date(doc.text)
 
     def _parse_spacy_date_text(self, date_text: str) -> Optional[str]:
-        """Normalise a SpaCy DATE entity string to ISO-8601."""
-        today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
-        text  = date_text.lower().strip()
+        today = datetime.now(INDIAN_TIMEZONE).date()
+        text = self._compact_text(date_text)
 
+        # Basic today/tomorrow etc.
         if text in ("today", "tonight", "today night"):
             return today.isoformat()
-        if text in ("tomorrow", "tmr", "tmrw", "tomorrow morning", "tomorrow evening"):
+        if text in ("tomorrow", "tmr", "tmrw", "tomorrow morning", "tomorrow evening", "tomorrow night"):
             return (today + timedelta(days=1)).isoformat()
         if text in ("day after tomorrow", "day after", "overmorrow"):
             return (today + timedelta(days=2)).isoformat()
@@ -1215,9 +1093,25 @@ class ChatNLPService:
             return (today + timedelta(weeks=1)).isoformat()
         if "this week" in text:
             return today.isoformat()
+        if "next month" in text:
+            return (today.replace(day=1) + timedelta(days=32)).replace(day=1).isoformat()
+        if "this month" in text:
+            return today.isoformat()
 
-        weekdays = ["monday", "tuesday", "wednesday", "thursday",
-                    "friday", "saturday", "sunday"]
+        # "in 3 days", "after 5 days"
+        m = re.search(r"(?:in|after)\s+(\d+)\s+days?", text)
+        if m:
+            days = int(m.group(1))
+            return (today + timedelta(days=days)).isoformat()
+
+        # "this weekend" -> next Saturday
+        if "this weekend" in text:
+            days_until_sat = (5 - today.weekday()) % 7
+            if days_until_sat == 0:  # it's already Saturday, take today
+                return today.isoformat()
+            return (today + timedelta(days=days_until_sat)).isoformat()
+
+        weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
         for i, day in enumerate(weekdays):
             if f"next {day}" in text:
                 delta = (i - today.weekday()) % 7 or 7
@@ -1226,35 +1120,69 @@ class ChatNLPService:
                 delta = (i - today.weekday()) % 7
                 return (today + timedelta(days=delta)).isoformat()
 
-        return None  # hand off to regex
+        return None
 
     def _extract_date(self, text: str) -> Optional[str]:
-        """Regex-based date extraction covering common Indian date formats."""
-        today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
-        msg   = text.lower()
+        today = datetime.now(INDIAN_TIMEZONE).date()
+        msg = self._compact_text(text)
 
-        if "day after tomorrow" in msg:
-            return (today + timedelta(days=2)).isoformat()
-        if "tomorrow" in msg:
-            return (today + timedelta(days=1)).isoformat()
-        if "today" in msg:
-            return today.isoformat()
+        relative_map = {
+            "day after tomorrow": 2,
+            "tomorrow": 1,
+            "tmrw": 1,
+            "tmr": 1,
+            "today": 0,
+            "tonight": 0,
+        }
+        for key, delta in relative_map.items():
+            if key in msg:
+                return (today + timedelta(days=delta)).isoformat()
+
         if "next week" in msg:
             return (today + timedelta(weeks=1)).isoformat()
+        if "this week" in msg:
+            return today.isoformat()
+        if "next month" in msg:
+            return (today.replace(day=1) + timedelta(days=32)).replace(day=1).isoformat()
 
-        weekday_names = ["monday", "tuesday", "wednesday", "thursday",
-                         "friday", "saturday", "sunday"]
-        for i, day in enumerate(weekday_names):
+        m = re.search(r"(?:in|after)\s+(\d+)\s+days?", msg)
+        if m:
+            days = int(m.group(1))
+            return (today + timedelta(days=days)).isoformat()
+
+        if "this weekend" in msg:
+            days_until_sat = (5 - today.weekday()) % 7
+            if days_until_sat == 0:
+                return today.isoformat()
+            return (today + timedelta(days=days_until_sat)).isoformat()
+
+        weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+        for i, day in enumerate(weekdays):
             if f"next {day}" in msg:
                 delta = (i - today.weekday()) % 7 or 7
                 return (today + timedelta(days=delta)).isoformat()
+            if f"this {day}" in msg:
+                delta = (i - today.weekday()) % 7
+                return (today + timedelta(days=delta)).isoformat()
+            if msg == day:
+                delta = (i - today.weekday()) % 7
+                return (today + timedelta(days=delta)).isoformat()
 
-        # YYYY-MM-DD
+        month_map = {
+            "january": 1, "jan": 1, "february": 2, "feb": 2,
+            "march": 3, "mar": 3, "april": 4, "apr": 4,
+            "may": 5, "june": 6, "jun": 6, "july": 7, "jul": 7,
+            "august": 8, "aug": 8, "september": 9, "sept": 9, "sep": 9,
+            "october": 10, "oct": 10, "november": 11, "nov": 11,
+            "december": 12, "dec": 12,
+        }
+        month_pat = "|".join(sorted(month_map, key=len, reverse=True))
+        ordinal = r"(?:st|nd|rd|th)?"
+
         m = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", msg)
         if m:
             return m.group(1)
 
-        # DD/MM/YYYY or DD-MM-YYYY
         m = re.search(r"\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b", msg)
         if m:
             d, mo, y = int(m.group(1)), int(m.group(2)), int(m.group(3))
@@ -1265,25 +1193,11 @@ class ChatNLPService:
             except ValueError:
                 pass
 
-        # Month map (longest keys first to avoid "may" beating "march")
-        month_map = {
-            "january": 1,  "jan": 1,  "february": 2, "feb": 2,
-            "march": 3,    "mar": 3,  "april": 4,    "apr": 4,
-            "may": 5,      "june": 6, "jun": 6,      "july": 7,
-            "jul": 7,      "august": 8,"aug": 8,     "september": 9,
-            "sept": 9,     "sep": 9,  "october": 10, "oct": 10,
-            "november": 11,"nov": 11, "december": 12,"dec": 12,
-        }
-        month_pat = "|".join(sorted(month_map, key=len, reverse=True))
-
-        # "15 june" / "15 june 2026"
-        m = re.search(
-            rf"\b(\d{{1,2}})\s+({month_pat})(?:\s+(\d{{4}}))?\b", msg
-        )
+        m = re.search(rf"\b(\d{{1,2}}){ordinal}\s+({month_pat})(?:\s+(\d{{4}}))?\b", msg)
         if m:
-            d  = int(m.group(1))
+            d = int(m.group(1))
             mo = month_map[m.group(2)]
-            y  = int(m.group(3)) if m.group(3) else today.year
+            y = int(m.group(3)) if m.group(3) else today.year
             try:
                 date_obj = datetime(y, mo, d).date()
                 if not m.group(3) and date_obj < today:
@@ -1292,14 +1206,11 @@ class ChatNLPService:
             except ValueError:
                 pass
 
-        # "june 15" / "june 15 2026"
-        m = re.search(
-            rf"\b({month_pat})\s+(\d{{1,2}})(?:\s+(\d{{4}}))?\b", msg
-        )
+        m = re.search(rf"\b({month_pat})\s+(\d{{1,2}}){ordinal}(?:\s+(\d{{4}}))?\b", msg)
         if m:
             mo = month_map[m.group(1)]
-            d  = int(m.group(2))
-            y  = int(m.group(3)) if m.group(3) else today.year
+            d = int(m.group(2))
+            y = int(m.group(3)) if m.group(3) else today.year
             try:
                 date_obj = datetime(y, mo, d).date()
                 if not m.group(3) and date_obj < today:
@@ -1308,7 +1219,6 @@ class ChatNLPService:
             except ValueError:
                 pass
 
-        # DD/MM  (no year)
         m = re.search(r"\b(\d{1,2})[/-](\d{1,2})\b", msg)
         if m:
             d, mo = int(m.group(1)), int(m.group(2))
@@ -1322,16 +1232,25 @@ class ChatNLPService:
 
         return None
 
-    # ── Time ──────────────────────────────────────────────────────────────
-
     def _extract_time(self, text: str) -> Optional[str]:
-        """Extract departure/arrival time; returns HH:MM (24-hour)."""
-        msg = text.lower()
-        m = re.search(r"\b(\d{1,2}):(\d{2})\s*(?:hrs?)?\b", msg)
+        msg = self._compact_text(text)
+
+        m = re.search(r"\b(\d{1,2}):(\d{2})\s*(?:hrs?|h)?\b", msg)
         if m:
             h, mn = int(m.group(1)), int(m.group(2))
             if 0 <= h < 24 and 0 <= mn < 60:
                 return f"{h:02d}:{mn:02d}"
+
+        m = re.search(r"\b(\d{1,2})\s*:\s*(\d{2})\s*(am|pm)\b", msg)
+        if m:
+            h, mn, mer = int(m.group(1)), int(m.group(2)), m.group(3)
+            if 1 <= h <= 12 and 0 <= mn < 60:
+                if mer == "pm" and h != 12:
+                    h += 12
+                elif mer == "am" and h == 12:
+                    h = 0
+                return f"{h:02d}:{mn:02d}"
+
         m = re.search(r"\b(\d{1,2})\s*(am|pm)\b", msg)
         if m:
             h, mer = int(m.group(1)), m.group(2)
@@ -1341,120 +1260,42 @@ class ChatNLPService:
                 elif mer == "am" and h == 12:
                     h = 0
                 return f"{h:02d}:00"
-        for word, t in (
-            ("morning", "08:00"), ("afternoon", "14:00"),
-            ("evening", "18:00"), ("night",    "21:00"),
-        ):
-            if word in msg:
-                return t
+
+        if any(w in msg for w in ["morning", "morn", "am"]):
+            return "08:00"
+        if any(w in msg for w in ["afternoon", "noon", "midday"]):
+            return "14:00"
+        if any(w in msg for w in ["evening", "eve"]):
+            return "18:00"
+        if any(w in msg for w in ["night", "tonight", "nite"]):
+            return "21:00"
+
         return None
 
-    # ── Budget ────────────────────────────────────────────────────────────
+    # ------------------------------------------------------------------
+    # Slot / payload / confidence
+    # ------------------------------------------------------------------
 
-    def _extract_budget_from_doc(self, doc: Doc) -> Optional[float]:
-        """Use the token Matcher first, then regex."""
-        matches = self._matcher(doc)
-        for match_id, start, end in matches:
-            if self.nlp.vocab.strings[match_id] == "BUDGET":
-                for token in doc[start:end]:
-                    if token.like_num:
-                        try:
-                            return float(token.text.replace(",", ""))
-                        except ValueError:
-                            pass
-        for pat in (r"[₹$]\s*(\d[\d,]*(?:\.\d+)?)",
-                    r"\b(\d[\d,]*)\s*(?:rupees?|inr)\b"):
-            m = re.search(pat, doc.text.lower())
-            if m:
-                return float(m.group(1).replace(",", ""))
-        return None
-
-    # ── Preference ────────────────────────────────────────────────────────
-
-    def _extract_preference_from_doc(self, doc: Doc) -> Optional[str]:
-        """
-        PhraseMatcher (_pref_pm) finds phrases like "shortest route".
-        The match label IS the normalised preference: fastest / cheapest / shortest.
-        """
-        doc_lower = self.nlp.make_doc(doc.text.lower())
-        matches = self._pref_pm(doc_lower)
-        if not matches:
-            return None
-        best = max(matches, key=lambda m: m[2] - m[1])
-        return self.nlp.vocab.strings[best[0]]
-
-    # ── Booking ID ────────────────────────────────────────────────────────
-
-    def _extract_booking_id_from_doc(self, doc: Doc) -> Optional[int]:
-        """Use the Matcher BOOKING_ID pattern, then regex fallback."""
-        matches = self._matcher(doc)
-        for match_id, start, end in matches:
-            if self.nlp.vocab.strings[match_id] == "BOOKING_ID":
-                for token in doc[start:end]:
-                    if token.is_digit:
-                        return int(token.text)
-        for pat in (
-            r"booking\s*(?:id|#|no\.?)?\s*:?\s*(\d+)",
-            r"cancel(?:\s+booking)?\s+(\d+)",
-        ):
-            m = re.search(pat, doc.text.lower())
-            if m:
-                return int(m.group(1))
-        return None
-
-    # ── Train Number ──────────────────────────────────────────────────────
-
-    def _extract_train_number_from_doc(self, doc: Doc) -> Optional[str]:
-        """Use the Matcher TRAIN_NUMBER pattern, then contextual regex."""
-        matches = self._matcher(doc)
-        for match_id, start, end in matches:
-            if self.nlp.vocab.strings[match_id] == "TRAIN_NUMBER":
-                for token in doc[start:end]:
-                    if token.is_digit and 4 <= len(token.text) <= 6:
-                        return token.text
-        # Contextual regex: bare 4-6 digit number when "train / route / schedule" mentioned
-        tokens_lower = {t.lower_ for t in doc}
-        if tokens_lower & {"train", "route", "schedule"}:
-            m = re.search(r"\b(\d{4,6})\b", doc.text)
-            if m:
-                return m.group(1)
-        return None
-
-    # ═════════════════════════════════════════════════════════════════════
-    # Slot Filling & Clarification
-    # ═════════════════════════════════════════════════════════════════════
-
-    def _check_missing_slots(
-        self,
-        intent: str,
-        context: Dict[str, Any],
-    ) -> List[str]:
+    def _check_missing_slots(self, intent: str, context: Dict[str, Any]) -> List[str]:
         required = REQUIRED_SLOTS.get(intent, [])
         return [slot for slot in required if not context.get(slot)]
 
     def _filled_slots(self, entities: Entity) -> List[str]:
-        tracked = [
-            "source", "destination", "date", "travel_class",
-            "passengers", "train_number", "booking_id",
-        ]
+        tracked = ["source", "destination", "date", "travel_class", "passengers", "train_number", "booking_id"]
         data = entities.model_dump(exclude_none=True)
         return [k for k in tracked if data.get(k) is not None]
 
-    # ═════════════════════════════════════════════════════════════════════
-    # Next Action / Payload / Confidence
-    # ═════════════════════════════════════════════════════════════════════
-
     _INTENT_TO_ACTION: Dict[str, str] = {
-        "ROUTE_SEARCH":    "SEARCH_ROUTE",
-        "SHORTEST_ROUTE":  "ROUTE_ANALYSIS",
-        "CHEAPEST_ROUTE":  "ROUTE_ANALYSIS",
-        "FASTEST_ROUTE":   "ROUTE_ANALYSIS",
-        "COMPARE_ROUTES":  "COMPARE_ROUTES",
-        "FARE_ESTIMATE":   "ESTIMATE_FARE",
-        "BOOK_TICKET":     "BOOK",
+        "ROUTE_SEARCH": "SEARCH_ROUTE",
+        "SHORTEST_ROUTE": "ROUTE_ANALYSIS",
+        "CHEAPEST_ROUTE": "ROUTE_ANALYSIS",
+        "FASTEST_ROUTE": "ROUTE_ANALYSIS",
+        "COMPARE_ROUTES": "COMPARE_ROUTES",
+        "FARE_ESTIMATE": "ESTIMATE_FARE",
+        "BOOK_TICKET": "BOOK",
         "BOOKING_HISTORY": "BOOKING_HISTORY",
-        "CANCEL_BOOKING":  "CANCEL_BOOKING",
-        "CHECK_ROUTE":     "CHECK_ROUTE",
+        "CANCEL_BOOKING": "CANCEL_BOOKING",
+        "CHECK_ROUTE": "CHECK_ROUTE",
     }
 
     def _determine_next_action(self, intent: str, clarification_needed: bool) -> str:
@@ -1462,59 +1303,77 @@ class ChatNLPService:
             return "ASK_CLARIFICATION"
         return self._INTENT_TO_ACTION.get(intent, "UNKNOWN")
 
-    def _build_action_payload(
-        self,
-        intent: str,
-        context: Dict[str, Any],
-        next_action: str,
-    ) -> Optional[Dict[str, Any]]:
+    def _build_action_payload(self, intent: str, context: Dict[str, Any], next_action: str) -> Optional[Dict[str, Any]]:
         if next_action in ("ASK_CLARIFICATION", "UNKNOWN"):
             return None
+
         if next_action in ("SEARCH_ROUTE", "ROUTE_ANALYSIS", "ESTIMATE_FARE", "COMPARE_ROUTES"):
             return {
-                "source":       context.get("source"),
-                "destination":  context.get("destination"),
-                "date":         context.get("date"),
+                "source": context.get("source"),
+                "destination": context.get("destination"),
+                "date": context.get("date"),
                 "via_stations": context.get("via_stations"),
                 "travel_class": context.get("travel_class"),
-                "passengers":   context.get("passengers", 1),
-                "preference":   context.get("preference"),
+                "passengers": context.get("passengers", 1),
+                "preference": context.get("preference"),
             }
+
         if next_action == "BOOK":
             return {
-                "source":       context.get("source"),
-                "destination":  context.get("destination"),
-                "date":         context.get("date"),
+                "source": context.get("source"),
+                "destination": context.get("destination"),
+                "date": context.get("date"),
                 "travel_class": context.get("travel_class"),
-                "passengers":   context.get("passengers"),
+                "passengers": context.get("passengers"),
             }
+
         if next_action == "BOOKING_HISTORY":
             return {}
         if next_action == "CANCEL_BOOKING":
             return {"booking_id": context.get("booking_id")}
         if next_action == "CHECK_ROUTE":
             return {"train_number": context.get("train_number")}
+
         return None
 
-    def _calculate_confidence(
-        self,
-        intent: str,
-        entities: Entity,
-        missing_slots: List[str],
-    ) -> float:
+    def _calculate_confidence(self, intent: str, entities: Entity, missing_slots: List[str]) -> float:
         base: Dict[str, float] = {
-            "BOOK_TICKET":     0.80, "ROUTE_SEARCH":   0.80,
-            "FARE_ESTIMATE":   0.80, "BOOKING_HISTORY":0.88,
-            "CANCEL_BOOKING":  0.85, "CHECK_ROUTE":    0.80,
-            "SHORTEST_ROUTE":  0.75, "CHEAPEST_ROUTE": 0.75,
-            "FASTEST_ROUTE":   0.75, "COMPARE_ROUTES": 0.70,
-            "UNKNOWN":         0.20,
+            "BOOK_TICKET": 0.80,
+            "ROUTE_SEARCH": 0.80,
+            "FARE_ESTIMATE": 0.80,
+            "BOOKING_HISTORY": 0.88,
+            "CANCEL_BOOKING": 0.85,
+            "CHECK_ROUTE": 0.80,
+            "SHORTEST_ROUTE": 0.75,
+            "CHEAPEST_ROUTE": 0.75,
+            "FASTEST_ROUTE": 0.75,
+            "COMPARE_ROUTES": 0.70,
+            "UNKNOWN": 0.20,
         }
         score = base.get(intent, 0.45)
         score -= min(len(missing_slots) * 0.12, 0.36)
-        entity_count = sum(
-            1 for v in entities.model_dump(exclude_none=True).values()
-            if v is not None
-        )
+        entity_count = sum(1 for v in entities.model_dump(exclude_none=True).values() if v is not None)
         score += min(entity_count * 0.05, 0.20)
         return round(max(0.10, min(1.00, score)), 2)
+
+
+# =============================================================================
+# Quick-test helper
+# =============================================================================
+
+if __name__ == "__main__":
+    service = ChatNLPService()
+    samples = [
+        "is there any train from Bangalore to Delhi",
+        "book 2 sleeper tickets tomorrow 4 pm",
+        "12th June 4 pm",
+        "cancel my booking 9",
+        "fare bangalore delhi",
+        "no, from Mumbai",  # correction example
+        "me and my friend want to go chennai tmrw",  # passengers inference
+        "under 500 rs",  # budget constraint
+    ]
+    for s in samples:
+        out = service.analyze(ChatAnalysisRequest(user_message=s))
+        print("\nUSER:", s)
+        print(out.model_dump())
