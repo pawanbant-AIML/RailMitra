@@ -9,8 +9,8 @@ COPY backend/.env .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Download the spaCy model directly via pip (medium size, ~43 MB)
-RUN pip install --no-cache-dir en-core-web-md
+# Install the best spaCy English model (underscores, not hyphens!)
+RUN pip install --no-cache-dir en_core_web_lg
 
 COPY backend/app ./app
 
