@@ -1,12 +1,38 @@
+import os
 import random
+import requests
 from app.models import schemas
 from typing import List
 
 class ResponseGenerator:
     """
-    Generates human-like, friendly responses without relying on an external LLM.
-    Uses randomization and dynamic templating to feel natural and conversational.
+    Generates human-like, friendly responses.
+    Uses Hugging Face Inference API if an API key is provided in the environment.
+    Falls back to dynamic templating if the API fails or is not configured.
     """
+
+    def __init__(self):
+        self.hf_api_key = os.environ.get("HUGGINGFACE_API_KEY")
+        self.hf_api_url = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta"
+        
+    def _call_llm(self, prompt: str, fallback_text: str) -> str:
+        if not self.hf_api_key:
+            return fallback_text
+            
+        headers = {"Authorization": f"Bearer {self.hf_api_key}"}
+        payload = {
+            "inputs": f"<|system|>\nYou are RailMitra, a friendly and extremely helpful Indian Railways AI assistant. Keep responses very short, cheerful, and use emojis. Do not output markdown code blocks. Formatting is allowed.<|end|>\n<|user|>\n{prompt}<|end|>\n<|assistant|>\n",
+            "parameters": {"max_new_tokens": 150, "temperature": 0.7, "return_full_text": False}
+        }
+        try:
+            response = requests.post(self.hf_api_url, headers=headers, json=payload, timeout=4)
+            if response.status_code == 200:
+                text = response.json()[0]['generated_text'].strip()
+                if text:
+                    return text
+        except Exception:
+            pass
+        return fallback_text
 
     GREETINGS = [
         "Hello! I'm RailMitra, your friendly AI train assistant. How can I help you travel today? 🚂",
@@ -21,22 +47,25 @@ class ResponseGenerator:
     ]
 
     def get_greeting(self) -> str:
-        return random.choice(self.GREETINGS)
+        prompt = "Greet the user warmly as a train assistant."
+        return self._call_llm(prompt, random.choice(self.GREETINGS))
 
     def get_unknown(self) -> str:
-        return random.choice(self.UNKNOWN)
+        prompt = "Politely tell the user you didn't understand and remind them you can find trains, book tickets, and check fares."
+        return self._call_llm(prompt, random.choice(self.UNKNOWN))
 
     def format_search_results(self, src: str, dst: str, results: list, preference: str = None) -> str:
         if not results:
-            return random.choice([
-                f"Oh no! 😔 I couldn't find any direct trains from **{src}** to **{dst}** for those dates. Try a different date or nearby stations.",
-                f"I searched everywhere, but there are no trains running between **{src}** and **{dst}** matching your request. 🚉",
+            prompt = f"Tell the user nicely that no trains were found from {src} to {dst}. Suggest they try different dates or stations."
+            fallback = random.choice([
+                f"Oh no! 😔 I couldn't find any direct trains from **{src}** to **{dst}**. Try a different date or nearby stations.",
+                f"I searched everywhere, but there are no trains running between **{src}** and **{dst}**. 🚉",
             ])
+            return self._call_llm(prompt, fallback)
             
         lines = [random.choice([
             f"Great news! 🎉 I found **{len(results)}** train(s) heading from **{src}** to **{dst}**:\n",
-            f"Here are **{len(results)}** options for your journey from **{src}** to **{dst}**:\n",
-            f"All aboard! 🚂 I've found **{len(results)}** trains from **{src}** to **{dst}**:\n"
+            f"Here are **{len(results)}** options for your journey from **{src}** to **{dst}**:\n"
         ])]
         
         for r in results[:10]:
@@ -48,41 +77,44 @@ class ResponseGenerator:
         if preference:
             lines.append(f"\n💡 Sorted by your preference: **{preference}**")
 
-        lines.append('\n💡 *Want to book? Just say "Book 2 tickets for [Train Number]" or "Book sleeper tickets!"*')
+        lines.append('\n💡 *Want to book? Just say "Book 2 tickets for [Train Number]"*')
         return "\n".join(lines)
 
     def format_booking_confirmation(self, booking) -> str:
         date_str = booking.travel_date.strftime("%d %b %Y") if hasattr(booking.travel_date, "strftime") else str(booking.travel_date)
-        return random.choice([
-            f"✅ **Woohoo! Your booking is confirmed.**\n\n"
-            f"🆔 Booking ID: **{booking.id}**\n🚆 Train: **{booking.train_number}**\n🎫 Class: **{booking.travel_class}**\n👥 Passengers: **{booking.passenger_count}**\n📅 Date: **{date_str}**\n\n"
-            "Have a fantastic trip! Say *'Show my bookings'* anytime to view this.",
-            
-            f"✅ **All set! Your tickets are booked.**\n\n"
-            f"🆔 Booking ID: **{booking.id}**\n🚆 Train: **{booking.train_number}**\n🎫 Class: **{booking.travel_class}**\n👥 Passengers: **{booking.passenger_count}**\n📅 Date: **{date_str}**\n\n"
-            "Safe travels! 🎒 Let me know if you need anything else."
+        prompt = f"Congratulate the user! Their booking is confirmed. Booking ID: {booking.id}, Train: {booking.train_number}, Class: {booking.travel_class}, Passengers: {booking.passenger_count}, Date: {date_str}. Say 'Have a great trip!'"
+        
+        fallback = random.choice([
+            f"✅ **Woohoo! Your booking is confirmed.**\n\n🆔 Booking ID: **{booking.id}**\n🚆 Train: **{booking.train_number}**\n🎫 Class: **{booking.travel_class}**\n👥 Passengers: **{booking.passenger_count}**\n📅 Date: **{date_str}**\n\nHave a fantastic trip!",
         ])
+        
+        # Since this is highly structured data, we just return the fallback template directly, 
+        # as LLMs might mess up the specific exact formatting required by the user interface.
+        # But we can let the LLM generate a congratulatory intro.
+        intro = self._call_llm("Say 'Woohoo! Your booking is confirmed!' in a highly enthusiastic and friendly way.", "✅ **Woohoo! Your booking is confirmed.**")
+        return f"{intro}\n\n🆔 Booking ID: **{booking.id}**\n🚆 Train: **{booking.train_number}**\n🎫 Class: **{booking.travel_class}**\n👥 Passengers: **{booking.passenger_count}**\n📅 Date: **{date_str}**\n\nHave a fantastic trip!"
 
     def format_booking_failure(self, error: str) -> str:
-        return random.choice([
-            f"❌ Oops, the booking failed: {error}\nPlease try again! Example: *'Book 2 sleeper tickets from Bangalore to Mumbai tomorrow'*",
-            f"❌ Something went wrong while booking: {error}\nLet's try that again. You can say *'Book a ticket from Delhi to Pune'*."
-        ])
+        prompt = f"Apologize to the user because their train booking failed due to the error: {error}. Tell them to try again."
+        fallback = f"❌ Oops, the booking failed: {error}\nPlease try again!"
+        return self._call_llm(prompt, fallback)
 
     def ask_clarification(self, missing_slot: str, custom_question: str = None) -> str:
         if custom_question:
             return f"🤔 {custom_question}"
             
         prompts = {
-            "source": ["I'd love to help! Where are you starting your journey?", "Got it. Where are we traveling from? 🚉"],
-            "destination": ["Where are we heading to? 🌍", "And what's your destination? 📍"],
-            "date": ["When would you like to travel? (e.g. tomorrow, 15 June) 📅", "Got a specific date in mind? 🗓️"],
-            "travel_class": ["Which class do you prefer? (e.g., Sleeper, 3AC, CC) 🎫", "Do you have a preferred travel class? (1AC, 2AC, Sleeper...) 🛋️"],
-            "passengers": ["How many people are traveling? 👥", "Just you, or are there more passengers? 🧑‍🤝‍🧑"]
+            "source": ("Ask the user where they are traveling from.", "Got it. Where are we traveling from? 🚉"),
+            "destination": ("Ask the user where they are heading to.", "Where are we heading to? 🌍"),
+            "date": ("Ask the user what date they want to travel.", "Got a specific date in mind? 🗓️"),
+            "travel_class": ("Ask the user which class they prefer (like Sleeper or 3AC).", "Which class do you prefer? (e.g., Sleeper, 3AC, CC) 🎫"),
+            "passengers": ("Ask the user how many people are traveling.", "How many people are traveling? 👥"),
+            "booking_id": ("Ask the user for their booking ID.", "Please provide your booking ID. 🎫"),
+            "train_number": ("Ask the user for the train number.", "What is the train number? 🚂"),
         }
         
-        choices = prompts.get(missing_slot, [f"Please provide more details about your {missing_slot}."])
-        return random.choice(choices)
+        llm_prompt, fallback = prompts.get(missing_slot, ("Ask the user for more details.", f"Please provide more details about your {missing_slot}."))
+        return self._call_llm(llm_prompt, random.choice([fallback, f"Please provide your {missing_slot}."]))
 
     def format_fares(self, src: str, dst: str, train_number: str, fares: list) -> str:
         if not fares:
@@ -95,18 +127,16 @@ class ResponseGenerator:
         
     def format_cancellation(self, bid: str, success: bool) -> str:
         if success:
-            return random.choice([
-                f"✅ Done. Booking **#{bid}** has been cancelled successfully.",
-                f"✅ I've cancelled booking **#{bid}** for you. Let me know if you want to book another trip!"
-            ])
-        return f"❌ I couldn't find booking **#{bid}**. Are you sure that's the right ID? Say *'Show my bookings'* to check."
+            prompt = f"Tell the user their booking #{bid} was successfully cancelled."
+            fallback = f"✅ Done. Booking **#{bid}** has been cancelled successfully."
+        else:
+            prompt = f"Tell the user booking #{bid} was not found, so it could not be cancelled."
+            fallback = f"❌ I couldn't find booking **#{bid}**. Are you sure that's the right ID?"
+        return self._call_llm(prompt, fallback)
 
     def format_history(self, history: list) -> str:
         if not history:
-            return random.choice([
-                "📭 It looks like you have no bookings yet! Ready to plan a trip? Just say *'Book a train to Mumbai'*.",
-                "📭 Your booking history is empty right now. Let's change that! 🚂"
-            ])
+            return self._call_llm("Tell the user they have no bookings yet and suggest they book a train.", "📭 It looks like you have no bookings yet!")
             
         lines = [f"📋 **Here are your Bookings** ({len(history)} total):\n"]
         for b in history:
@@ -119,11 +149,7 @@ class ResponseGenerator:
         if not stops:
             return f"🗺️ I couldn't find the route schedule for train **{tn}**. Are you sure the number is correct?"
             
-        lines = [random.choice([
-            f"🗺️ **Here is the route for Train {tn}** ({len(stops)} stops):\n",
-            f"🗺️ **Schedule for Train {tn}**:\n"
-        ])]
-        
+        lines = [f"🗺️ **Schedule for Train {tn}**:\n"]
         for s in stops[:20]:
             arr = s.arrival_time or "--:--"
             dep = s.departure_time or "--:--"
@@ -137,11 +163,7 @@ class ResponseGenerator:
         if intent == "GREETING":
             return self.get_greeting()
         elif intent == "THANK_YOU":
-            return random.choice([
-                "You're very welcome! Have a great day! 😊",
-                "Anytime! Let me know if you need anything else. 🚂",
-                "Happy to help! Safe travels. 🚆"
-            ])
+            return self._call_llm("Say 'You are very welcome! Let me know if you need anything else' cheerfully.", "You're very welcome! Have a great day! 😊")
         elif intent == "ABOUT_BOT":
-            return "I am RailMitra, your friendly AI assistant. I can help you find trains, check fares, book tickets, and track your history all using natural language!"
+            return self._call_llm("Explain that you are RailMitra, a friendly Indian Railways AI assistant.", "I am RailMitra, your friendly AI assistant. I can help you find trains, check fares, book tickets, and track your history!")
         return self.get_unknown()
