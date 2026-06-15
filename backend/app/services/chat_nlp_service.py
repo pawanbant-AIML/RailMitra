@@ -387,7 +387,8 @@ class ChatNLPService:
         pending = memory.get("_pending_slot")
         filled = set(self._filled_slots(current_entities))
         if pending and pending not in filled and pending not in missing:
-            missing = [pending] + missing
+            if pending in REQUIRED_SLOTS.get(intent, []):
+                missing = [pending] + missing
 
         clarification_needed = bool(missing)
         clarification_question = CLARIFICATION_QUESTIONS.get(missing[0]) if missing else None
@@ -652,6 +653,12 @@ class ChatNLPService:
         return best_intent
 
     def _infer_intent_from_context(self, doc: Doc, context: Dict[str, Any], memory: Dict[str, Any], entities: Entity) -> str:
+        pending = memory.get("_pending_slot")
+        if pending == "train_number":
+            return "CHECK_ROUTE"
+        if pending == "booking_id":
+            return "CANCEL_BOOKING"
+
         has_route = bool(context.get("source") and context.get("destination"))
         if not has_route:
             return "UNKNOWN"
@@ -1014,13 +1021,17 @@ class ChatNLPService:
         return None
 
     def _extract_train_number_from_doc(self, doc: Doc) -> Optional[str]:
+        # If the user just typed a 4-to-6 digit number (e.g. answering a prompt)
+        text = self._compact_text(doc.text)
+        if re.fullmatch(r"\d{4,6}", text):
+            return text
+
         matches = self._matcher(doc)
         for match_id, start, end in matches:
             if self.nlp.vocab.strings[match_id] == "TRAIN_NUMBER":
                 for token in doc[start:end]:
                     if token.is_digit and 4 <= len(token.text) <= 6:
                         return token.text
-        text = self._compact_text(doc.text)
         if any(k in text for k in ["train", "route", "schedule", "nr", "no"]):
             m = re.search(r"\b(\d{4,6})\b", text)
             if m:
