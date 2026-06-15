@@ -172,6 +172,9 @@ INTENT_PHRASES: Dict[str, List[str]] = {
     "CHECK_ROUTE": ["route for", "route for train", "show route", "check route",
         "train route", "schedule for", "show schedule", "train stops",
         "stations on", "where does train stop"],
+    "GREETING": ["hello", "hi", "hey", "good morning", "good evening", "good afternoon", "greetings", "hi there", "namaste", "hola", "hey there", "sup"],
+    "THANK_YOU": ["thank you", "thanks", "thx", "ty", "appreciate it", "thanks a lot", "thank u"],
+    "ABOUT_BOT": ["who are you", "what are you", "what can you do", "help me", "help", "what do you do", "how does this work", "about yourself"],
 }
 
 REQUIRED_SLOTS: Dict[str, List[str]] = {
@@ -603,6 +606,15 @@ class ChatNLPService:
         # Strategy 4: Rule‑based fallback (original token‑set logic)
         tokens_lower = {t.lower_ for t in doc}
         station_ents = [e for e in doc.ents if e.label_ == "STATION"]
+
+        # Small talk checks first
+        if tokens_lower & {"hello", "hi", "hey", "greetings"}:
+            return "GREETING"
+        if tokens_lower & {"thanks", "thank", "thx", "ty"}:
+            return "THANK_YOU"
+        if tokens_lower & {"who", "what", "help"}:
+            if doc.text.lower() in ["help", "who are you", "what can you do", "help me"]:
+                return "ABOUT_BOT"
 
         if tokens_lower & {"cancel", "cancellation", "void", "drop"}:
             return "CANCEL_BOOKING"
@@ -1296,6 +1308,9 @@ class ChatNLPService:
         "BOOKING_HISTORY": "BOOKING_HISTORY",
         "CANCEL_BOOKING": "CANCEL_BOOKING",
         "CHECK_ROUTE": "CHECK_ROUTE",
+        "GREETING": "SMALL_TALK",
+        "THANK_YOU": "SMALL_TALK",
+        "ABOUT_BOT": "SMALL_TALK",
     }
 
     def _determine_next_action(self, intent: str, clarification_needed: bool) -> str:
@@ -1333,6 +1348,8 @@ class ChatNLPService:
             return {"booking_id": context.get("booking_id")}
         if next_action == "CHECK_ROUTE":
             return {"train_number": context.get("train_number")}
+        if next_action == "SMALL_TALK":
+            return {"intent": intent}
 
         return None
 
