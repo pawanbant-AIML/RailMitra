@@ -298,7 +298,7 @@ class AgentService:
                 "function": {
                     "name": t.name,
                     "description": t.description,
-                    "parameters": t.args_schema.model_json_schema()
+                    "parameters": t.args_schema.schema()
                     if hasattr(t, "args_schema") and t.args_schema
                     else {"type": "object", "properties": {}},
                 },
