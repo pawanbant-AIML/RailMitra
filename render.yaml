@@ -27,7 +27,7 @@ services:
     name: railmitra-frontend
     runtime: docker
     dockerfilePath: ./frontend/Dockerfile
-    dockerContext: ./frontend
+    dockerContext: .
     plan: free
     envVars:
       - key: VITE_API_URL
