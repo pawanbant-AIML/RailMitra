@@ -1,27 +1,23 @@
 """
-agent/tools.py – LangChain-compatible tool definitions for RailMitra.
+agent/tools.py — LangChain-compatible tool definitions for RailMitra.
 
-Each tool wraps a DB-backed service function.  Tools receive and return plain
-strings so the LLM can parse them easily. All database errors are caught and
-returned as error strings (so the LLM can decide how to handle them) rather
-than raising exceptions.
-
-DB session injection strategy:
-  Tools are class methods on AgentTools.  The class is instantiated once per
-  request inside AgentService, receiving the SQLAlchemy Session at that point.
+This version is intentionally conservative:
+- JSON output for every tool
+- Strong station resolution
+- More fields returned for search/train/route/fare
+- Graceful handling of incomplete Datameet railway coverage
 """
 
 from __future__ import annotations
 
 import json
-from datetime import date, datetime
-from typing import Optional
+import re
+from datetime import date
+from typing import Any, Dict, List, Optional
 
 from langchain_core.tools import tool
 from sqlalchemy.orm import Session
 
-from app.models.train_models import Booking as BookingModel
-from app.models import schemas
 from app.repository.booking_repo import BookingRepository
 from app.repository.fare_repo import FareRepository
 from app.repository.route_repo import RouteRepository
@@ -31,10 +27,6 @@ from app.services.booking_service import BookingService
 from app.services.fare_calculator import FareCalculator
 from app.services.timetable_service import TimetableService
 from app.core.logger import logger
-
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
 
 _CLASS_NAMES = {
     "GN": "General",
@@ -47,9 +39,75 @@ _CLASS_NAMES = {
     "EC": "Executive Chair Car",
 }
 
+_STATION_ALIASES = {
+    "bangalore": "SBC",
+    "bengaluru": "SBC",
+    "blr": "SBC",
+    "sbc": "SBC",
+    "yesvantpur": "YPR",
+    "ypr": "YPR",
+    "mysore": "MYS",
+    "mysuru": "MYS",
+    "mys": "MYS",
+    "hubli": "UBL",
+    "hubballi": "UBL",
+    "ubl": "UBL",
+    "mangalore": "MAQ",
+    "mangaluru": "MAQ",
+    "maq": "MAQ",
+    "mumbai": "CSMT",
+    "bombay": "CSMT",
+    "csmt": "CSMT",
+    "delhi": "NDLS",
+    "new delhi": "NDLS",
+    "ndls": "NDLS",
+    "chennai": "MAS",
+    "madras": "MAS",
+    "mas": "MAS",
+    "kolkata": "HWH",
+    "howrah": "HWH",
+    "hwh": "HWH",
+    "hyderabad": "HYB",
+    "hyd": "HYB",
+    "secunderabad": "SC",
+    "pune": "PUNE",
+    "goa": "MAO",
+    "udupi": "UD",
+    "hassan": "HAS",
+    "shivamogga": "SMET",
+    "shimoga": "SMET",
+    "davangere": "DVG",
+    "kochi": "ERS",
+    "ernakulam": "ERS",
+    "ers": "ERS",
+    "trivandrum": "TVC",
+    "thiruvananthapuram": "TVC",
+    "tvc": "TVC",
+    "coimbatore": "CBE",
+    "madurai": "MDU",
+    "ahmedabad": "ADI",
+    "surat": "ST",
+    "vadodara": "BRC",
+    "jaipur": "JP",
+    "jodhpur": "JU",
+    "udaipur": "UDZ",
+    "lucknow": "LKO",
+    "varanasi": "BSB",
+    "patna": "PNBE",
+    "bhopal": "BPL",
+    "nagpur": "NGP",
+    "indore": "INDB",
+    "visakhapatnam": "VSKP",
+    "vizag": "VSKP",
+    "amritsar": "ASR",
+    "chandigarh": "CDG",
+    "ludhiana": "LDH",
+    "guwahati": "GHY",
+    "bhubaneswar": "BBS",
+}
+
 
 def _norm_class(cls: str) -> str:
-    """Normalise a user-friendly class string to the internal code."""
     mapping = {
         "sleeper": "SL", "sl": "SL",
         "general": "GN", "gn": "GN", "unreserved": "GN",
@@ -60,17 +118,16 @@ def _norm_class(cls: str) -> str:
         "ec": "EC", "executive": "EC",
         "2s": "2S", "second sitting": "2S",
     }
-    return mapping.get(cls.lower().strip(), cls.upper().strip())
+    value = (cls or "").strip()
+    if not value:
+        return "SL"
+    return mapping.get(value.lower(), value.upper())
 
-
-# ---------------------------------------------------------------------------
-# AgentTools – bound to one DB session per request
-# ---------------------------------------------------------------------------
 
 class AgentTools:
     """
-    Instantiate once per chat request, passing the live DB session.
-    Call `.build()` to get a list of LangChain tool objects ready for the agent.
+    Instantiate once per request with the DB session.
+    Returns LangChain-compatible tools via `.build()`.
     """
 
     def __init__(self, db: Session):
@@ -84,65 +141,106 @@ class AgentTools:
         self.booking_svc = BookingService()
         self.fare_calc = FareCalculator()
 
-    # ------------------------------------------------------------------ #
-    # Internal helpers                                                     #
-    # ------------------------------------------------------------------ #
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
 
     def _resolve(self, name: str) -> str:
-        """Resolve a station name/alias to a DB station code."""
-        code = self.station_repo.fuzzy_find_station(name, self.db)
-        return code or name.upper()
+        raw = (name or "").strip()
+        if not raw:
+            return raw
+        code = self.station_repo.fuzzy_find_station(raw, self.db)
+        if code:
+            return code
+        cleaned = re.sub(r"\s+", " ", raw.lower()).strip()
+        if cleaned in _STATION_ALIASES:
+            return _STATION_ALIASES[cleaned]
+        for alias, alias_code in _STATION_ALIASES.items():
+            if alias in cleaned:
+                return alias_code
+        return raw.upper()
 
-    # ------------------------------------------------------------------ #
-    # Tool: search_trains                                                  #
-    # ------------------------------------------------------------------ #
+    def _safe_attr(self, obj: Any, *names: str, default: Any = None) -> Any:
+        for name in names:
+            if isinstance(obj, dict) and name in obj:
+                val = obj.get(name)
+                if val is not None:
+                    return val
+            if hasattr(obj, name):
+                val = getattr(obj, name)
+                if val is not None:
+                    return val
+        return default
 
-    def search_trains(self, source: str, destination: str, date: str = "") -> str:
-        """
-        Search for trains running between source and destination.
+    def _serialize_train(self, train: Any) -> Dict[str, Any]:
+        return {
+            "train_number": self._safe_attr(train, "train_number", "number", default=""),
+            "train_name": self._safe_attr(train, "train_name", "name", default=""),
+            "source": self._safe_attr(train, "source_station_code", "source", "from_station", default=""),
+            "destination": self._safe_attr(train, "destination_station_code", "destination", "to_station", default=""),
+            "departure": self._safe_attr(train, "departure_time", "departure", "dep", default=""),
+            "arrival": self._safe_attr(train, "arrival_time", "arrival", "arr", default=""),
+            "duration": self._safe_attr(train, "duration", "journey_time", "travel_time", default=""),
+            "stops": self._safe_attr(train, "stops", "total_stops", "stop_count", default=None),
+        }
 
-        Args:
-            source: Source station name or code (e.g. 'Bangalore', 'SBC')
-            destination: Destination station name or code (e.g. 'Mangalore', 'MAQ')
-            date: Optional travel date in YYYY-MM-DD format (e.g. '2024-06-20')
+    # ------------------------------------------------------------------
+    # Tools
+    # ------------------------------------------------------------------
 
-        Returns:
-            JSON string with list of trains or an error message.
-        """
+    def search_trains(self, source: str, destination: str, date: str = "", limit: int = 20) -> str:
         try:
             src_code = self._resolve(source)
             dst_code = self._resolve(destination)
             logger.info(f"[tool:search_trains] {src_code} → {dst_code} on {date or 'any date'}")
-            trains = self.timetable_svc.search(src_code, dst_code, date or None, self.db)
+
+            trains = self.timetable_svc.search(src_code, dst_code, date or None, self.db) or []
             if not trains:
                 return json.dumps({
                     "status": "no_results",
-                    "message": f"No trains found from {source} to {destination}. "
-                               "Try different station names or a different date."
+                    "message": f"No trains found from {source} to {destination}. Try different station names or a different date.",
+                    "source_resolved": src_code,
+                    "destination_resolved": dst_code,
+                    "trains": [],
                 })
-            result = []
-            for t in trains[:10]:
-                result.append({
-                    "train_number": t.train_number,
-                    "train_name": t.train_name,
-                    "from": t.source_station_code,
-                    "to": t.destination_station_code,
-                })
+
+            serialized = [self._serialize_train(t) for t in trains[: max(1, int(limit))]]
             return json.dumps({
                 "status": "ok",
                 "count": len(trains),
-                "shown": len(result),
+                "shown": len(serialized),
                 "source_resolved": src_code,
                 "destination_resolved": dst_code,
-                "trains": result,
+                "date": date or "",
+                "trains": serialized,
             })
         except Exception as exc:
-            logger.error(f"[tool:search_trains] Error: {exc}")
+            logger.exception("[tool:search_trains] Error")
             return json.dumps({"status": "error", "message": str(exc)})
 
-    # ------------------------------------------------------------------ #
-    # Tool: get_fare                                                       #
-    # ------------------------------------------------------------------ #
+    def get_train_info(self, train_number: str) -> str:
+        try:
+            train = self.train_repo.get_by_number(train_number, self.db)
+            if not train:
+                return json.dumps({
+                    "status": "not_found",
+                    "message": f"Train {train_number} was not found in the available data.",
+                })
+
+            payload = {
+                "status": "ok",
+                "train_number": self._safe_attr(train, "train_number", "number", default=train_number),
+                "train_name": self._safe_attr(train, "train_name", "name", default=""),
+                "source": self._safe_attr(train, "source_station_code", "source", default=""),
+                "destination": self._safe_attr(train, "destination_station_code", "destination", default=""),
+                "days": self._safe_attr(train, "running_days", "days", "day_pattern", default=""),
+                "duration": self._safe_attr(train, "duration", "journey_time", "travel_time", default=""),
+                "type": self._safe_attr(train, "train_type", "type", default=""),
+            }
+            return json.dumps(payload)
+        except Exception as exc:
+            logger.exception("[tool:get_train_info] Error")
+            return json.dumps({"status": "error", "message": str(exc)})
 
     def get_fare(
         self,
@@ -152,36 +250,16 @@ class AgentTools:
         travel_class: str = "ALL",
         passengers: int = 1,
     ) -> str:
-        """
-        Get fare estimate for a train between two stations.
-
-        Args:
-            train_number: The train number (e.g. '16585')
-            source: Source station name or code
-            destination: Destination station name or code
-            travel_class: Class code or name. Use 'ALL' to see all classes.
-                          Options: GN, SL, 3A, 2A, 1A, CC, EC, 2S, ALL
-            passengers: Number of passengers (default 1)
-
-        Returns:
-            JSON string with fare breakdown.
-        """
         try:
             src_code = self._resolve(source)
             dst_code = self._resolve(destination)
             cls_code = _norm_class(travel_class) if travel_class.upper() != "ALL" else "ALL"
 
-            # Try to get the train name for category multiplier
             train = self.train_repo.get_by_number(train_number, self.db)
-            train_name = train.train_name if train else ""
+            train_name = self._safe_attr(train, "train_name", "name", default="") if train else ""
 
-            # Try DB route distance first
-            distance = self.route_repo.get_distance_between(
-                train_number, src_code, dst_code, self.db
-            )
-
-            logger.info(f"[tool:get_fare] {train_number} {src_code}→{dst_code} "
-                        f"dist={distance} class={cls_code} pax={passengers}")
+            distance = self.route_repo.get_distance_between(train_number, src_code, dst_code, self.db)
+            logger.info(f"[tool:get_fare] {train_number} {src_code}→{dst_code} dist={distance} class={cls_code} pax={passengers}")
 
             if cls_code == "ALL":
                 fares_map = self.fare_calc.calculate_all_classes(
@@ -194,11 +272,12 @@ class AgentTools:
                 output = {}
                 for code, fb in fares_map.items():
                     output[code] = {
-                        "class_name": fb.class_name,
-                        "per_passenger": fb.per_passenger,
-                        "total": fb.total_fare,
-                        "distance_km": fb.distance_km,
-                        "is_estimated": fb.is_estimated,
+                        "class_code": getattr(fb, "class_code", code),
+                        "class_name": getattr(fb, "class_name", _CLASS_NAMES.get(code, code)),
+                        "per_passenger": getattr(fb, "per_passenger", 0),
+                        "total": getattr(fb, "total_fare", 0),
+                        "distance_km": getattr(fb, "distance_km", distance),
+                        "is_estimated": getattr(fb, "is_estimated", True),
                     }
                 return json.dumps({
                     "status": "ok",
@@ -209,77 +288,60 @@ class AgentTools:
                     "passengers": passengers,
                     "fares": output,
                 })
-            else:
-                fb = self.fare_calc.calculate(
-                    travel_class=cls_code,
-                    distance_km=distance,
-                    train_name=train_name,
-                    passengers=passengers,
-                    source_code=src_code,
-                    dest_code=dst_code,
-                )
-                return json.dumps({
-                    "status": "ok",
-                    "train_number": train_number,
-                    "train_name": train_name,
-                    "source": src_code,
-                    "destination": dst_code,
-                    "class_code": fb.class_code,
-                    "class_name": fb.class_name,
-                    "distance_km": fb.distance_km,
-                    "per_passenger": fb.per_passenger,
-                    "total_fare": fb.total_fare,
-                    "passengers": passengers,
-                    "is_estimated": fb.is_estimated,
-                })
+
+            fb = self.fare_calc.calculate(
+                travel_class=cls_code,
+                distance_km=distance,
+                train_name=train_name,
+                passengers=passengers,
+                source_code=src_code,
+                dest_code=dst_code,
+            )
+            return json.dumps({
+                "status": "ok",
+                "train_number": train_number,
+                "train_name": train_name,
+                "source": src_code,
+                "destination": dst_code,
+                "class_code": getattr(fb, "class_code", cls_code),
+                "class_name": getattr(fb, "class_name", _CLASS_NAMES.get(cls_code, cls_code)),
+                "distance_km": getattr(fb, "distance_km", distance),
+                "per_passenger": getattr(fb, "per_passenger", 0),
+                "total_fare": getattr(fb, "total_fare", 0),
+                "passengers": passengers,
+                "is_estimated": getattr(fb, "is_estimated", True),
+            })
         except Exception as exc:
-            logger.error(f"[tool:get_fare] Error: {exc}")
+            logger.exception("[tool:get_fare] Error")
             return json.dumps({"status": "error", "message": str(exc)})
 
-    # ------------------------------------------------------------------ #
-    # Tool: get_train_route                                                #
-    # ------------------------------------------------------------------ #
-
     def get_train_route(self, train_number: str) -> str:
-        """
-        Get the full route/schedule for a specific train number.
-
-        Args:
-            train_number: The train number (e.g. '16585', '12627')
-
-        Returns:
-            JSON string with list of stops including times and distance.
-        """
         try:
             logger.info(f"[tool:get_train_route] {train_number}")
-            stops = self.route_repo.get_by_train(train_number, self.db)
+            stops = self.route_repo.get_by_train(train_number, self.db) or []
             if not stops:
                 return json.dumps({
                     "status": "no_results",
-                    "message": f"No route data found for train {train_number}. Check the train number."
+                    "message": f"No route data found for train {train_number}. Check the train number.",
                 })
-            stops_data = []
+            route = []
             for s in stops:
-                stops_data.append({
-                    "seq": s.sequence,
-                    "station_code": s.station_code,
-                    "arrival": s.arrival_time or "--",
-                    "departure": s.departure_time or "--",
-                    "distance_km": s.distance_km,
+                route.append({
+                    "seq": self._safe_attr(s, "sequence", "seq", default=None),
+                    "station_code": self._safe_attr(s, "station_code", "station", default=""),
+                    "arrival": self._safe_attr(s, "arrival_time", "arrival", default="--"),
+                    "departure": self._safe_attr(s, "departure_time", "departure", default="--"),
+                    "distance_km": self._safe_attr(s, "distance_km", default=None),
                 })
             return json.dumps({
                 "status": "ok",
                 "train_number": train_number,
-                "total_stops": len(stops_data),
-                "route": stops_data,
+                "total_stops": len(route),
+                "route": route,
             })
         except Exception as exc:
-            logger.error(f"[tool:get_train_route] Error: {exc}")
+            logger.exception("[tool:get_train_route] Error")
             return json.dumps({"status": "error", "message": str(exc)})
-
-    # ------------------------------------------------------------------ #
-    # Tool: book_ticket                                                    #
-    # ------------------------------------------------------------------ #
 
     def book_ticket(
         self,
@@ -290,28 +352,13 @@ class AgentTools:
         travel_date: str = "",
         train_number: str = "",
     ) -> str:
-        """
-        Create a simulated ticket booking.
-
-        Args:
-            source: Source station name or code
-            destination: Destination station name or code
-            travel_class: Class (e.g. SL, 3A, 2A, 1A, GN, CC)
-            passengers: Number of passengers (default 1)
-            travel_date: Date in YYYY-MM-DD format. Defaults to today.
-            train_number: Optional specific train number to book on.
-
-        Returns:
-            JSON string with booking confirmation details.
-        """
         try:
             src_code = self._resolve(source)
             dst_code = self._resolve(destination)
             cls_code = _norm_class(travel_class)
             book_date = travel_date or date.today().isoformat()
 
-            logger.info(f"[tool:book_ticket] {src_code}→{dst_code} "
-                        f"cls={cls_code} pax={passengers} date={book_date}")
+            logger.info(f"[tool:book_ticket] {src_code}→{dst_code} cls={cls_code} pax={passengers} date={book_date}")
 
             entities = {
                 "source_station": src_code,
@@ -325,15 +372,14 @@ class AgentTools:
             }
             booking = self.booking_svc.create_mock_booking(entities, self.db)
 
-            # Compute fare for confirmation message
-            dist = self.route_repo.get_distance_between(
-                booking.train_number, src_code, dst_code, self.db
-            )
+            dist = self.route_repo.get_distance_between(booking.train_number, src_code, dst_code, self.db)
             train = self.train_repo.get_by_number(booking.train_number, self.db)
+            train_name = self._safe_attr(train, "train_name", "name", default="") if train else ""
+
             fare_breakdown = self.fare_calc.calculate(
                 travel_class=cls_code,
                 distance_km=dist,
-                train_name=train.train_name if train else "",
+                train_name=train_name,
                 passengers=passengers,
                 source_code=src_code,
                 dest_code=dst_code,
@@ -341,34 +387,21 @@ class AgentTools:
 
             return json.dumps({
                 "status": "confirmed",
-                "booking_id": booking.id,
-                "train_number": booking.train_number,
+                "booking_id": self._safe_attr(booking, "id", "booking_id", default=None),
+                "train_number": self._safe_attr(booking, "train_number", default=train_number),
                 "source": src_code,
                 "destination": dst_code,
                 "class": cls_code,
                 "passengers": passengers,
                 "travel_date": book_date,
-                "estimated_total_fare": fare_breakdown.total_fare,
-                "per_passenger_fare": fare_breakdown.per_passenger,
+                "estimated_total_fare": self._safe_attr(fare_breakdown, "total_fare", default=0),
+                "per_passenger_fare": self._safe_attr(fare_breakdown, "per_passenger", default=0),
             })
         except Exception as exc:
-            logger.error(f"[tool:book_ticket] Error: {exc}")
+            logger.exception("[tool:book_ticket] Error")
             return json.dumps({"status": "error", "message": str(exc)})
 
-    # ------------------------------------------------------------------ #
-    # Tool: cancel_booking                                                 #
-    # ------------------------------------------------------------------ #
-
     def cancel_booking(self, booking_id: int) -> str:
-        """
-        Cancel an existing booking by its booking ID.
-
-        Args:
-            booking_id: The numeric booking ID (e.g. 42)
-
-        Returns:
-            JSON string confirming cancellation or an error.
-        """
         try:
             logger.info(f"[tool:cancel_booking] id={booking_id}")
             success = self.booking_repo.cancel(int(booking_id), self.db)
@@ -376,69 +409,43 @@ class AgentTools:
                 return json.dumps({
                     "status": "cancelled",
                     "booking_id": booking_id,
-                    "message": f"Booking #{booking_id} has been successfully cancelled."
+                    "message": f"Booking #{booking_id} has been successfully cancelled.",
                 })
             return json.dumps({
                 "status": "not_found",
                 "booking_id": booking_id,
-                "message": f"Booking #{booking_id} was not found. Please check the ID."
+                "message": f"Booking #{booking_id} was not found. Please check the ID.",
             })
         except Exception as exc:
-            logger.error(f"[tool:cancel_booking] Error: {exc}")
+            logger.exception("[tool:cancel_booking] Error")
             return json.dumps({"status": "error", "message": str(exc)})
 
-    # ------------------------------------------------------------------ #
-    # Tool: get_booking_history                                            #
-    # ------------------------------------------------------------------ #
-
     def get_booking_history(self, user_id: int = 1) -> str:
-        """
-        Retrieve booking history for the current user.
-
-        Args:
-            user_id: User ID (defaults to 1 for the demo session).
-
-        Returns:
-            JSON string with list of bookings.
-        """
         try:
             logger.info(f"[tool:get_booking_history] user={user_id}")
-            bookings = self.booking_repo.list_by_user(user_id, self.db)
+            bookings = self.booking_repo.list_by_user(user_id, self.db) or []
             if not bookings:
                 return json.dumps({
                     "status": "empty",
-                    "message": "No bookings found for this user."
+                    "message": "No bookings found for this user.",
                 })
             data = []
             for b in bookings:
                 data.append({
-                    "booking_id": b.id,
-                    "train_number": b.train_number,
-                    "class": b.travel_class,
-                    "passengers": b.passenger_count,
-                    "travel_date": str(b.travel_date),
-                    "status": b.status,
-                    "created_at": str(b.created_at),
+                    "booking_id": self._safe_attr(b, "id", "booking_id", default=None),
+                    "train_number": self._safe_attr(b, "train_number", default=""),
+                    "class": self._safe_attr(b, "travel_class", "class", default=""),
+                    "passengers": self._safe_attr(b, "passenger_count", "passengers", default=1),
+                    "travel_date": str(self._safe_attr(b, "travel_date", default="")),
+                    "status": self._safe_attr(b, "status", default=""),
+                    "created_at": str(self._safe_attr(b, "created_at", default="")),
                 })
             return json.dumps({"status": "ok", "count": len(data), "bookings": data})
         except Exception as exc:
-            logger.error(f"[tool:get_booking_history] Error: {exc}")
+            logger.exception("[tool:get_booking_history] Error")
             return json.dumps({"status": "error", "message": str(exc)})
 
-    # ------------------------------------------------------------------ #
-    # Tool: get_station_info                                               #
-    # ------------------------------------------------------------------ #
-
     def get_station_info(self, station: str) -> str:
-        """
-        Get information about a railway station.
-
-        Args:
-            station: Station name or code (e.g. 'Bangalore', 'SBC', 'Mangalore')
-
-        Returns:
-            JSON string with station details.
-        """
         try:
             code = self._resolve(station)
             logger.info(f"[tool:get_station_info] {station} → {code}")
@@ -446,38 +453,35 @@ class AgentTools:
             if not s:
                 return json.dumps({
                     "status": "not_found",
-                    "message": f"Station '{station}' not found. Try a different spelling or station code."
+                    "message": f"Station '{station}' not found. Try a different spelling or station code.",
                 })
             return json.dumps({
                 "status": "ok",
-                "station_code": s.station_code,
-                "station_name": s.station_name,
-                "city": s.city or "N/A",
+                "station_code": self._safe_attr(s, "station_code", default=code),
+                "station_name": self._safe_attr(s, "station_name", default=station),
+                "city": self._safe_attr(s, "city", default="N/A"),
+                "station_type": self._safe_attr(s, "station_type", default="Railway station"),
             })
         except Exception as exc:
-            logger.error(f"[tool:get_station_info] Error: {exc}")
+            logger.exception("[tool:get_station_info] Error")
             return json.dumps({"status": "error", "message": str(exc)})
 
-    # ------------------------------------------------------------------ #
-    # build() – returns LangChain @tool objects                           #
-    # ------------------------------------------------------------------ #
+    # ------------------------------------------------------------------
+    # Tool export
+    # ------------------------------------------------------------------
 
     def build(self) -> list:
-        """
-        Return a list of LangChain-compatible tool callables, each with
-        the correct docstring so the LLM knows how to call them.
-        """
         instance = self
 
         @tool
-        def search_trains(source: str, destination: str, date: str = "") -> str:
-            """
-            Search for trains running between source and destination.
-            source: Source station name or code (e.g. 'Bangalore', 'SBC')
-            destination: Destination station name or code (e.g. 'Mangalore', 'MAQ')
-            date: Optional travel date in YYYY-MM-DD format
-            """
-            return instance.search_trains(source, destination, date)
+        def search_trains(source: str, destination: str, date: str = "", limit: int = 20) -> str:
+            """Search for trains between source and destination."""
+            return instance.search_trains(source, destination, date, limit)
+
+        @tool
+        def get_train_info(train_number: str) -> str:
+            """Get summary information for a specific train number."""
+            return instance.get_train_info(train_number)
 
         @tool
         def get_fare(
@@ -487,18 +491,12 @@ class AgentTools:
             travel_class: str = "ALL",
             passengers: int = 1,
         ) -> str:
-            """
-            Get fare estimate for a train. Use travel_class='ALL' to see all classes.
-            travel_class options: GN (General), SL (Sleeper), 3A, 2A, 1A, CC, EC, ALL
-            """
+            """Get fare estimate for a train. Use travel_class='ALL' to see all classes."""
             return instance.get_fare(train_number, source, destination, travel_class, passengers)
 
         @tool
         def get_train_route(train_number: str) -> str:
-            """
-            Get the full route and schedule for a specific train number.
-            train_number: The train number e.g. '16585', '12627'
-            """
+            """Get the full route and schedule for a specific train number."""
             return instance.get_train_route(train_number)
 
         @tool
@@ -510,42 +508,27 @@ class AgentTools:
             travel_date: str = "",
             train_number: str = "",
         ) -> str:
-            """
-            Book a train ticket. Creates a simulated booking and returns confirmation.
-            travel_class: SL, 3A, 2A, 1A, GN, CC, EC
-            travel_date: YYYY-MM-DD format, defaults to today
-            train_number: Optional specific train to book
-            """
-            return instance.book_ticket(
-                source, destination, travel_class, passengers, travel_date, train_number
-            )
+            """Book a train ticket and return a simulated confirmation."""
+            return instance.book_ticket(source, destination, travel_class, passengers, travel_date, train_number)
 
         @tool
         def cancel_booking(booking_id: int) -> str:
-            """
-            Cancel an existing booking using its booking ID number.
-            booking_id: The numeric booking ID shown in confirmation
-            """
+            """Cancel an existing booking using its booking ID number."""
             return instance.cancel_booking(booking_id)
 
         @tool
         def get_booking_history(user_id: int = 1) -> str:
-            """
-            Get all previous bookings for the current user.
-            user_id: Defaults to 1 (demo user)
-            """
+            """Get booking history for the current user."""
             return instance.get_booking_history(user_id)
 
         @tool
         def get_station_info(station: str) -> str:
-            """
-            Get details about a railway station by name or code.
-            station: Station name or code e.g. 'Bangalore', 'SBC', 'Mangalore'
-            """
+            """Get details about a railway station by name or code."""
             return instance.get_station_info(station)
 
         return [
             search_trains,
+            get_train_info,
             get_fare,
             get_train_route,
             book_ticket,
