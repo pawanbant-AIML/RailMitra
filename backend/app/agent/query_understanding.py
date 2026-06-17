@@ -36,6 +36,8 @@ class QuerySlots:
     passengers: Optional[int] = None
     travel_date: Optional[str] = None
     time_hint: Optional[str] = None
+    departure_after: Optional[str] = None
+    departure_before: Optional[str] = None
     budget_max: Optional[int] = None
     sort_by: Optional[str] = None
     limit: Optional[int] = None
@@ -226,6 +228,8 @@ class QueryUnderstanding:
         slots.passengers = self._extract_passengers(normalized_text)
         slots.travel_date = self._extract_date(normalized_text)
         slots.time_hint = self._extract_time_hint(normalized_text)
+        slots.departure_after = self._extract_departure_after(normalized_text)
+        slots.departure_before = self._extract_departure_before(normalized_text)
         slots.budget_max = self._extract_budget(normalized_text)
         slots.sort_by = self._extract_sort_hint(normalized_text)
         slots.limit = self._extract_limit(normalized_text)
@@ -402,7 +406,34 @@ class QueryUnderstanding:
         if "night" in text or "tonight" in text:
             return "night"
 
+        # Fallback: an explicit time like 'after 8 pm' or 'at 20:00' returns the time string
         match = re.search(r"\b(?:after|before|at)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b", text)
+        if not match:
+            return None
+        hh = int(match.group(1))
+        mm = int(match.group(2) or 0)
+        ampm = (match.group(3) or "").lower()
+        if ampm == "pm" and hh != 12:
+            hh += 12
+        if ampm == "am" and hh == 12:
+            hh = 0
+        return f"{hh:02d}:{mm:02d}"
+
+    def _extract_departure_after(self, text: str) -> Optional[str]:
+        match = re.search(r"\bafter\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b", text)
+        if not match:
+            return None
+        hh = int(match.group(1))
+        mm = int(match.group(2) or 0)
+        ampm = (match.group(3) or "").lower()
+        if ampm == "pm" and hh != 12:
+            hh += 12
+        if ampm == "am" and hh == 12:
+            hh = 0
+        return f"{hh:02d}:{mm:02d}"
+
+    def _extract_departure_before(self, text: str) -> Optional[str]:
+        match = re.search(r"\bbefore\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b", text)
         if not match:
             return None
         hh = int(match.group(1))

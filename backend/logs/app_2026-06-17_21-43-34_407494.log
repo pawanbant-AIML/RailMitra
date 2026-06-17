@@ -1,0 +1,8 @@
+2026-06-17 21:43:34.425 | INFO     | app.agent.agent_service:run:115 - [agent] Processing: 'Tell me about train 16585'
+2026-06-17 21:43:34.471 | INFO     | app.agent.agent_service:run:133 - [agent] LLM call iteration 1
+2026-06-17 21:43:34.676 | ERROR    | app.agent.agent_service:_call_llm:256 - [agent] Request exception: HTTPSConnectionPool(host='api-inference.huggingface.co', port=443): Max retries exceeded with url: /models/meta-llama/Llama-3.1-8B-Instruct/v1/chat/completions (Caused by NameResolutionError("HTTPSConnection(host='api-inference.huggingface.co', port=443): Failed to resolve 'api-inference.huggingface.co' ([Errno 11001] getaddrinfo failed)"))
+2026-06-17 21:43:34.677 | WARNING  | app.agent.agent_service:run:137 - [agent] LLM call failed - using fallback
+2026-06-17 21:43:34.692 | INFO     | app.agent.tools:get_station_info:444 - [tool:get_station_info] Tell → TELL
+2026-06-17 21:43:34.698 | INFO     | app.agent.tools:get_station_info:444 - [tool:get_station_info] about → ABOUT
+2026-06-17 21:43:34.699 | INFO     | app.agent.tools:get_station_info:444 - [tool:get_station_info] train → TRAIN
+2026-06-17 21:43:34.703 | INFO     | app.agent.tools:get_station_info:444 - [tool:get_station_info] 16585 → 16585
