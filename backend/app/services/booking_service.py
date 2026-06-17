@@ -2,8 +2,8 @@
 booking_service.py — Booking orchestration for RailMitra.
 
 This version is backward-compatible with the existing repository/service layout
-while adding stronger validation, station resolution, and fallback selection
-when Datameet data is incomplete.
+while adding stronger validation, station resolution, and time-aware fallback
+selection when Datameet data is incomplete.
 """
 
 from __future__ import annotations
@@ -68,6 +68,9 @@ class BookingContext:
     travel_class: Optional[str] = None
     passenger_count: int = 1
     user_id: int = 1
+    departure_after: Optional[str] = None
+    departure_before: Optional[str] = None
+    time_hint: Optional[str] = None
 
 
 class BookingService:
@@ -75,10 +78,6 @@ class BookingService:
         self.booking_repo = BookingRepository()
         self.timetable_svc = TimetableService()
         self.station_repo = StationRepository()
-
-    # ------------------------------------------------------------------
-    # Normalization helpers
-    # ------------------------------------------------------------------
 
     def _normalize_class(self, travel_class: Optional[str]) -> str:
         if not travel_class:
@@ -111,15 +110,25 @@ class BookingService:
         except Exception:
             return date.today().isoformat()
 
+    def _normalize_time(self, value: Any) -> Optional[str]:
+        if value is None:
+            return None
+        text = str(value).strip()
+        if not text:
+            return None
+        if len(text) == 5 and text[2] == ":":
+            return text
+        if len(text) == 4 and text.isdigit():
+            return f"{text[:2]}:{text[2:]}"
+        return text
+
     def _resolve_station(self, name_or_code: Optional[str], db: Session) -> Optional[str]:
         if not name_or_code:
             return None
-
         raw = str(name_or_code).strip()
         if not raw:
             return None
 
-        # Direct code check first.
         try:
             candidate = raw.upper()
             if len(candidate) <= 5 and candidate.isalpha():
@@ -129,7 +138,6 @@ class BookingService:
         except Exception:
             pass
 
-        # Fuzzy search on the repo.
         try:
             code = self.station_repo.fuzzy_find_station(raw, db)
             if code:
@@ -137,7 +145,7 @@ class BookingService:
         except Exception:
             pass
 
-        # Lightweight alias fallback.
+        lowered = raw.lower()
         aliases = {
             "bangalore": "SBC",
             "bengaluru": "SBC",
@@ -159,7 +167,6 @@ class BookingService:
             "udupi": "UD",
             "hassan": "HAS",
         }
-        lowered = raw.lower()
         for key, code in aliases.items():
             if key in lowered:
                 return code
@@ -169,14 +176,12 @@ class BookingService:
     def _pick_train(self, trains: Sequence[Any], entities: Dict[str, Any]) -> Optional[Any]:
         if not trains:
             return None
-
         requested_train = str(entities.get("train_number") or "").strip()
         if requested_train:
             for train in trains:
                 if str(getattr(train, "train_number", "")).strip() == requested_train:
                     return train
 
-        # Prefer direct route, then shortest duration, then low stops.
         def duration_value(train: Any) -> float:
             for key in ("duration_minutes", "duration", "travel_time", "journey_time"):
                 v = getattr(train, key, None)
@@ -201,11 +206,7 @@ class BookingService:
                     return 0
             return 1
 
-        ranked = sorted(
-            list(trains),
-            key=lambda t: (direct_bonus(t), duration_value(t), stop_value(t), str(getattr(t, "train_number", ""))),
-        )
-        return ranked[0] if ranked else None
+        return sorted(list(trains), key=lambda t: (direct_bonus(t), duration_value(t), stop_value(t), str(getattr(t, "train_number", ""))))[0]
 
     def _coerce_minutes(self, value: Any) -> float:
         if value is None:
@@ -215,7 +216,6 @@ class BookingService:
         text = str(value).strip().lower()
         if text.isdigit():
             return float(text)
-        # Parses "5h 40m", "5:40", "340 mins"
         minutes = 0.0
         if "h" in text or "m" in text:
             import re
@@ -228,136 +228,58 @@ class BookingService:
             if minutes > 0:
                 return minutes
         if ":" in text:
-            parts = text.split(":")
             try:
-                return float(int(parts[0]) * 60 + int(parts[1]))
+                parts = text.split(":")
+                return int(parts[0]) * 60 + int(parts[1])
             except Exception:
                 pass
-        try:
-            return float(text)
-        except Exception:
-            return 10**9
-
-    # ------------------------------------------------------------------
-    # Search / booking
-    # ------------------------------------------------------------------
+        return 10**9
 
     def search_trains(self, entities: dict, db: Session) -> list:
         src_raw = entities.get("source_station")
         dst_raw = entities.get("destination_station")
         if not src_raw or not dst_raw:
             return []
-
         src = self._resolve_station(src_raw, db) or str(src_raw).upper()
         dst = self._resolve_station(dst_raw, db) or str(dst_raw).upper()
-        travel_date = entities.get("date") or entities.get("travel_date")
-
-        trains = self.timetable_svc.search(src, dst, travel_date, db)
-        if trains:
-            return trains
-
-        # Graceful retry: try with canonical station codes from the same city if available.
-        try:
-            src_alt = self.station_repo.get_all_codes_for_city(src, db) or [src]
-            dst_alt = self.station_repo.get_all_codes_for_city(dst, db) or [dst]
-            seen = set()
-            collected = []
-            for s in src_alt:
-                for d in dst_alt:
-                    for train in self.timetable_svc.search(s, d, travel_date, db):
-                        tn = getattr(train, "train_number", None)
-                        if tn and tn not in seen:
-                            collected.append(train)
-                            seen.add(tn)
-            return collected
-        except Exception:
-            return []
+        return self.timetable_svc.search(
+            src,
+            dst,
+            entities.get("date"),
+            db,
+            departure_after=self._normalize_time(entities.get("departure_after")),
+            departure_before=self._normalize_time(entities.get("departure_before")),
+            time_hint=entities.get("time_hint"),
+            direct_only=bool(entities.get("direct_only", False)),
+            limit=int(entities.get("limit") or 10),
+        )
 
     def create_mock_booking(self, entities: dict, db: Session) -> schemas.Booking:
-        """
-        Create a booking using the best available train match.
-
-        This is intentionally resilient:
-        - resolves station names to codes
-        - normalizes passenger counts and classes
-        - picks a reasonable train when no explicit train number is supplied
-        - falls back to today's date if no date is provided
-        """
         src_raw = entities.get("source_station")
         dst_raw = entities.get("destination_station")
-        travel_class = self._normalize_class(entities.get("class_type") or entities.get("travel_class"))
-        passenger_num = self._normalize_passengers(
-            entities.get("passenger_count") or entities.get("passengers") or 1
-        )
+        if src_raw:
+            entities["source_station"] = self._resolve_station(src_raw, db) or src_raw
+        if dst_raw:
+            entities["destination_station"] = self._resolve_station(dst_raw, db) or dst_raw
+
+        passenger_num = self._normalize_passengers(entities.get("passenger_count", entities.get("passengers", 1)))
         travel_date = self._normalize_date(entities.get("date") or entities.get("travel_date"))
-        user_id = int(entities.get("user_id", 1) or 1)
-
-        source_code = self._resolve_station(src_raw, db) if src_raw else None
-        destination_code = self._resolve_station(dst_raw, db) if dst_raw else None
-
-        if source_code:
-            entities["source_station"] = source_code
-        if destination_code:
-            entities["destination_station"] = destination_code
 
         trains = self.search_trains(entities, db)
-        chosen_train = self._pick_train(trains, entities)
-
-        train_number = (
-            str(entities.get("train_number")).strip()
-            if entities.get("train_number")
-            else None
-        )
-        if not train_number and chosen_train is not None:
-            train_number = str(getattr(chosen_train, "train_number", "")).strip() or None
-        if not train_number:
-            train_number = "00000"
+        chosen = self._pick_train(trains, entities)
+        train_number = getattr(chosen, "train_number", None) if chosen else (entities.get("train_number") or "00000")
 
         payload = schemas.BookingCreate(
-            user_id=user_id,
+            user_id=int(entities.get("user_id", 1)),
             train_number=train_number,
             passenger_count=passenger_num,
-            travel_class=travel_class if travel_class != "ALL" else "SL",
+            travel_class=self._normalize_class(entities.get("class_type") or entities.get("travel_class") or "SL"),
             travel_date=travel_date,
         )
         return self.booking_repo.create(payload, db)
 
     def cancel_booking(self, booking_id: int, db: Session) -> bool:
-        try:
-            return bool(self.booking_repo.cancel(int(booking_id), db))
-        except Exception:
-            return False
+        return self.booking_repo.cancel(booking_id, db)
 
     def list_user_bookings(self, user_id: int, db: Session):
-        try:
-            return self.booking_repo.list_by_user(int(user_id), db)
-        except Exception:
-            return []
-
-    # ------------------------------------------------------------------
-    # Optional helpers for future agent wiring
-    # ------------------------------------------------------------------
-
-    def find_best_booking_candidate(self, entities: dict, db: Session):
-        trains = self.search_trains(entities, db)
-        return self._pick_train(trains, entities)
-
-    def modify_booking(self, booking_id: int, updates: dict, db: Session):
-        """
-        Best-effort booking modification wrapper.
-        Uses repo methods if they exist; otherwise returns None.
-        """
-        repo = self.booking_repo
-        for method_name in ("update", "modify", "update_booking", "edit"):
-            method = getattr(repo, method_name, None)
-            if callable(method):
-                try:
-                    return method(int(booking_id), updates, db)
-                except TypeError:
-                    try:
-                        return method(int(booking_id), db, updates)
-                    except Exception:
-                        continue
-                except Exception:
-                    continue
-        return None
+        return self.booking_repo.list_by_user(user_id, db)
