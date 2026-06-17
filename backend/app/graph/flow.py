@@ -1,7 +1,18 @@
-# graph/flow.py  – lightweight stub (langgraph API changed significantly)
-# The chat endpoint in api/v1/endpoints/chat.py handles all conversation logic.
-# This file is retained for future LangGraph integration.
+"""
+graph/flow.py – Agent graph entry point.
 
-def get_graph():
-    """Returns None – LangGraph integration is pending a stable API."""
-    return None
+The RailMitra agent runs as a simple tool-calling loop (see agent/agent_service.py).
+This module is retained as a thin wrapper for future LangGraph migration.
+"""
+
+from app.agent.agent_service import AgentService
+
+_agent = None
+
+
+def get_agent() -> AgentService:
+    """Return a singleton AgentService instance."""
+    global _agent
+    if _agent is None:
+        _agent = AgentService()
+    return _agent

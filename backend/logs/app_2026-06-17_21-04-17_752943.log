@@ -1,0 +1,66 @@
+2026-06-17 21:04:17.812 | ERROR    | app.agent.tools:search_trains:140 - [tool:search_trains] Error: (sqlite3.OperationalError) no such table: stations
+[SQL: SELECT stations.station_code AS stations_station_code, stations.station_name AS stations_station_name, stations.city AS stations_city 
+FROM stations 
+WHERE stations.station_code = ?
+ LIMIT ? OFFSET ?]
+[parameters: ('BANGALORE', 1, 0)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-06-17 21:04:17.954 | ERROR    | app.agent.tools:search_trains:140 - [tool:search_trains] Error: (sqlite3.OperationalError) no such table: stations
+[SQL: SELECT stations.station_code AS stations_station_code, stations.station_name AS stations_station_name, stations.city AS stations_city 
+FROM stations 
+WHERE stations.station_code = ?
+ LIMIT ? OFFSET ?]
+[parameters: ('BANGALORE', 1, 0)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-06-17 21:04:17.959 | ERROR    | app.agent.tools:search_trains:140 - [tool:search_trains] Error: (sqlite3.OperationalError) no such table: stations
+[SQL: SELECT stations.station_code AS stations_station_code, stations.station_name AS stations_station_name, stations.city AS stations_city 
+FROM stations 
+WHERE stations.station_code = ?
+ LIMIT ? OFFSET ?]
+[parameters: ('BANGALORE', 1, 0)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-06-17 21:04:17.960 | ERROR    | app.agent.tools:book_ticket:355 - [tool:book_ticket] Error: (sqlite3.OperationalError) no such table: stations
+[SQL: SELECT stations.station_code AS stations_station_code, stations.station_name AS stations_station_name, stations.city AS stations_city 
+FROM stations 
+WHERE stations.station_code = ?
+ LIMIT ? OFFSET ?]
+[parameters: ('BANGALORE', 1, 0)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-06-17 21:04:17.968 | ERROR    | app.agent.tools:get_station_info:458 - [tool:get_station_info] Error: (sqlite3.OperationalError) no such table: stations
+[SQL: SELECT stations.station_code AS stations_station_code, stations.station_name AS stations_station_name, stations.city AS stations_city 
+FROM stations 
+WHERE stations.station_code = ?
+ LIMIT ? OFFSET ?]
+[parameters: ('SBC', 1, 0)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-06-17 21:04:17.977 | INFO     | app.agent.agent_service:run:115 - [agent] Processing: 'Hello!'
+2026-06-17 21:04:17.977 | WARNING  | app.agent.agent_service:run:118 - [agent] No HF token - falling back to structured handler
+2026-06-17 21:04:17.979 | INFO     | app.agent.agent_service:run:115 - [agent] Processing: 'Show trains from Bangalore to Mangalore'
+2026-06-17 21:04:17.979 | WARNING  | app.agent.agent_service:run:118 - [agent] No HF token - falling back to structured handler
+2026-06-17 21:04:17.980 | ERROR    | app.agent.tools:search_trains:140 - [tool:search_trains] Error: (sqlite3.OperationalError) no such table: stations
+[SQL: SELECT stations.station_code AS stations_station_code, stations.station_name AS stations_station_name, stations.city AS stations_city 
+FROM stations 
+WHERE stations.station_code = ?
+ LIMIT ? OFFSET ?]
+[parameters: ('SBC', 1, 0)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-06-17 21:04:17.982 | INFO     | app.agent.agent_service:run:115 - [agent] Processing: 'What is the sleeper fare from Bangalore to Mangalore?'
+2026-06-17 21:04:17.983 | WARNING  | app.agent.agent_service:run:118 - [agent] No HF token - falling back to structured handler
+2026-06-17 21:04:17.983 | ERROR    | app.agent.tools:search_trains:140 - [tool:search_trains] Error: (sqlite3.OperationalError) no such table: stations
+[SQL: SELECT stations.station_code AS stations_station_code, stations.station_name AS stations_station_name, stations.city AS stations_city 
+FROM stations 
+WHERE stations.station_code = ?
+ LIMIT ? OFFSET ?]
+[parameters: ('SBC', 1, 0)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-06-17 21:04:17.985 | INFO     | app.agent.agent_service:run:115 - [agent] Processing: 'I need a train'
+2026-06-17 21:04:17.985 | WARNING  | app.agent.agent_service:run:118 - [agent] No HF token - falling back to structured handler
+2026-06-17 21:04:17.987 | INFO     | app.agent.agent_service:run:115 - [agent] Processing: 'What is the sleeper fare?'
+2026-06-17 21:04:17.987 | WARNING  | app.agent.agent_service:run:118 - [agent] No HF token - falling back to structured handler
+2026-06-17 21:04:17.988 | ERROR    | app.agent.tools:search_trains:140 - [tool:search_trains] Error: (sqlite3.OperationalError) no such table: stations
+[SQL: SELECT stations.station_code AS stations_station_code, stations.station_name AS stations_station_name, stations.city AS stations_city 
+FROM stations 
+WHERE stations.station_code = ?
+ LIMIT ? OFFSET ?]
+[parameters: ('SBC', 1, 0)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)

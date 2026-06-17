@@ -1,0 +1,20 @@
+2026-06-17 21:05:02.216 | INFO     | app.agent.tools:search_trains:115 - [tool:search_trains] SBC → MAQ on any date
+2026-06-17 21:05:02.225 | INFO     | app.agent.tools:search_trains:115 - [tool:search_trains] SBC → MAQ on any date
+2026-06-17 21:05:02.230 | INFO     | app.agent.tools:search_trains:115 - [tool:search_trains] SBC → MAQ on any date
+2026-06-17 21:05:02.238 | INFO     | app.agent.tools:book_ticket:313 - [tool:book_ticket] SBC→MAQ cls=SL pax=2 date=2026-06-17
+2026-06-17 21:05:02.258 | INFO     | app.agent.tools:get_booking_history:405 - [tool:get_booking_history] user=1
+2026-06-17 21:05:02.259 | INFO     | app.agent.tools:cancel_booking:373 - [tool:cancel_booking] id=3
+2026-06-17 21:05:02.270 | INFO     | app.agent.tools:get_station_info:444 - [tool:get_station_info] SBC → SBC
+2026-06-17 21:05:02.272 | INFO     | app.agent.agent_service:run:115 - [agent] Processing: 'Hello!'
+2026-06-17 21:05:02.272 | WARNING  | app.agent.agent_service:run:118 - [agent] No HF token - falling back to structured handler
+2026-06-17 21:05:02.274 | INFO     | app.agent.agent_service:run:115 - [agent] Processing: 'Show trains from Bangalore to Mangalore'
+2026-06-17 21:05:02.274 | WARNING  | app.agent.agent_service:run:118 - [agent] No HF token - falling back to structured handler
+2026-06-17 21:05:02.276 | INFO     | app.agent.tools:search_trains:115 - [tool:search_trains] SBC → MAQ on any date
+2026-06-17 21:05:02.280 | INFO     | app.agent.agent_service:run:115 - [agent] Processing: 'What is the sleeper fare from Bangalore to Mangalore?'
+2026-06-17 21:05:02.280 | WARNING  | app.agent.agent_service:run:118 - [agent] No HF token - falling back to structured handler
+2026-06-17 21:05:02.282 | INFO     | app.agent.tools:search_trains:115 - [tool:search_trains] SBC → MAQ on any date
+2026-06-17 21:05:02.286 | INFO     | app.agent.agent_service:run:115 - [agent] Processing: 'I need a train'
+2026-06-17 21:05:02.286 | WARNING  | app.agent.agent_service:run:118 - [agent] No HF token - falling back to structured handler
+2026-06-17 21:05:02.288 | INFO     | app.agent.agent_service:run:115 - [agent] Processing: 'What is the sleeper fare?'
+2026-06-17 21:05:02.288 | WARNING  | app.agent.agent_service:run:118 - [agent] No HF token - falling back to structured handler
+2026-06-17 21:05:02.290 | INFO     | app.agent.tools:search_trains:115 - [tool:search_trains] SBC → MAQ on any date

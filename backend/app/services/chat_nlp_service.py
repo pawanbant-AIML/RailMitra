@@ -14,10 +14,21 @@ from difflib import get_close_matches
 from typing import Any, Dict, List, Optional, Tuple
 from zoneinfo import ZoneInfo
 
-import spacy
 from pydantic import BaseModel
-from spacy.matcher import Matcher, PhraseMatcher
-from spacy.tokens import Doc, Span
+
+# spaCy is optional – if not installed the service runs in regex-only mode
+try:
+    import spacy
+    from spacy.matcher import Matcher, PhraseMatcher
+    from spacy.tokens import Doc, Span
+    _SPACY_AVAILABLE = True
+except ImportError:  # pragma: no cover
+    spacy = None  # type: ignore
+    Matcher = None  # type: ignore
+    PhraseMatcher = None  # type: ignore
+    Doc = None  # type: ignore
+    Span = None  # type: ignore
+    _SPACY_AVAILABLE = False
 
 # =============================================================================
 # Schemas
@@ -233,22 +244,27 @@ class ChatNLPService:
         self._has_vectors = False
         self.nlp = None
 
-        for model_name in ("en_core_web_lg", "en_core_web_md", "en_core_web_sm"):
-            try:
-                self.nlp = spacy.load(model_name)
-                self._has_vectors = self.nlp.vocab.vectors.shape[0] > 0
-                break
-            except OSError:
-                continue
+        if _SPACY_AVAILABLE and spacy is not None:
+            for model_name in ("en_core_web_lg", "en_core_web_md", "en_core_web_sm"):
+                try:
+                    self.nlp = spacy.load(model_name)
+                    self._has_vectors = self.nlp.vocab.vectors.shape[0] > 0
+                    break
+                except OSError:
+                    continue
 
-        if self.nlp is None:
-            raise RuntimeError(
-                "No SpaCy model found. Install one with: python -m spacy download en_core_web_sm"
+        if self.nlp is not None:
+            self._setup_entity_ruler()
+            self._setup_phrase_matchers()
+            self._setup_token_matchers()
+        else:
+            # spaCy unavailable or no model installed – regex-only mode
+            import logging
+            logging.getLogger(__name__).warning(
+                "ChatNLPService: running in regex-only mode (spaCy not available). "
+                "Install spacy + en_core_web_sm for full NLP support."
             )
 
-        self._setup_entity_ruler()
-        self._setup_phrase_matchers()
-        self._setup_token_matchers()
 
         self._intent_anchors: Optional[Dict[str, Any]] = None
         if self._has_vectors:
@@ -362,9 +378,25 @@ class ChatNLPService:
         user_message = self._expand_chat_abbreviations(user_message)
         history = request.conversation_history or []
 
+        # spaCy unavailable – return a minimal regex-only response
+        if self.nlp is None:
+            return ChatAnalysisResponse(
+                intent="UNKNOWN",
+                confidence=0.0,
+                entities=Entity(),
+                resolved_context={},
+                missing_required_slots=[],
+                clarification_needed=False,
+                clarification_question=None,
+                next_action="UNKNOWN",
+                action_payload=None,
+                memory_patch={},
+            )
+
         memory = self._build_memory(history)
         doc = self.nlp(user_message)
         current_entities = self._extract_entities_from_doc(doc, memory)
+
 
         # Detect and apply corrections (e.g., "no, from Delhi")
         corrections = self._detect_corrections(doc, memory)

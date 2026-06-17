@@ -21,13 +21,22 @@ class Settings(BaseSettings):
 
     SERVER_HOST: str = Field(default="0.0.0.0")
     SERVER_PORT: int = Field(default=8000)
-    PORT: int | None = Field(default=None)  # optional, just to accept Render's PORT
-    DEBUG: bool = Field(default=True)
+    PORT: int | None = Field(default=None)   # optional, Render injects this
+    DEBUG: bool = Field(default=False)
 
     DATABASE_URL: str = Field(default_factory=get_default_db_url)
     JWT_SECRET_KEY: str = Field(default="super-secret-jwt-key")
     JWT_ALGORITHM: str = Field(default="HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60)
+
+    # Hugging Face – try both common env var names
+    HUGGINGFACEHUB_API_TOKEN: str = Field(default="")
+    HUGGINGFACE_API_KEY: str = Field(default="")
+
+    @property
+    def hf_token(self) -> str:
+        """Return whichever HF token variable is set."""
+        return self.HUGGINGFACEHUB_API_TOKEN or self.HUGGINGFACE_API_KEY
 
 
 settings = Settings()

@@ -1,0 +1,35 @@
+services:
+  # ── Backend (FastAPI + Agent) ─────────────────────────────────────
+  - type: web
+    name: railmitra-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false          # set in Render dashboard
+      - key: HUGGINGFACEHUB_API_TOKEN
+        sync: false          # set in Render dashboard
+      - key: HUGGINGFACE_API_KEY
+        sync: false          # set in Render dashboard
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+    healthCheckPath: /health
+    autoDeploy: true
+
+  # ── Frontend (Vite / React) ───────────────────────────────────────
+  - type: web
+    name: railmitra-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: free
+    envVars:
+      - key: VITE_API_URL
+        sync: false          # e.g. https://railmitra-backend.onrender.com
+    autoDeploy: true

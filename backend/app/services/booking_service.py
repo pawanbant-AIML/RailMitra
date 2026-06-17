@@ -50,7 +50,7 @@ class BookingService:
         train_number = (
             trains[0].train_number
             if trains
-            else entities.get("train_number", "00000")
+            else (entities.get("train_number") or "00000")
         )
 
         # ── Date fallback → today ──────────────────────────────────────
