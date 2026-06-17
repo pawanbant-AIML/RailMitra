@@ -1,0 +1,3954 @@
+[
+  {
+    "index": 1,
+    "query": "Show trains from Bangalore to Mangalore",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "show trains from bangalore to mangalore"
+  },
+  {
+    "index": 2,
+    "query": "Find trains from Bengaluru to Mangaluru",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "find trains from bengaluru to mangaluru"
+  },
+  {
+    "index": 3,
+    "query": "Find trains between Bangalore and Mangalore",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "find trains between bangalore and mangalore"
+  },
+  {
+    "index": 4,
+    "query": "Show trains from Pune to Hyderabad",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "PUNE",
+      "destination": "HYB",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "show trains from pune to hyderabad"
+  },
+  {
+    "index": 5,
+    "query": "Show trains from Delhi to Chennai",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "NDLS",
+      "destination": "MAS",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "show trains from delhi to chennai"
+  },
+  {
+    "index": 6,
+    "query": "Show trains from Mysore to Bangalore",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "MYS",
+      "destination": "SBC",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "show trains from mysore to bangalore"
+  },
+  {
+    "index": 7,
+    "query": "Show trains from Mangalore to Bangalore",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "MAQ",
+      "destination": "SBC",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "show trains from mangalore to bangalore"
+  },
+  {
+    "index": 8,
+    "query": "Any trains from Chennai to Hyderabad?",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "MAS",
+      "destination": "HYB",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "any trains from chennai to hyderabad?"
+  },
+  {
+    "index": 9,
+    "query": "Train from Bangalore to Goa",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAO",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from bangalore to goa"
+  },
+  {
+    "index": 10,
+    "query": "Train from Hubli to Bangalore",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "UBL",
+      "destination": "SBC",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from hubli to bangalore"
+  },
+  {
+    "index": 11,
+    "query": "Train from Banglore to Manglore",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from banglore to manglore"
+  },
+  {
+    "index": 12,
+    "query": "Train from Bengluru to Mangaloor",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from bengluru to mangaloor"
+  },
+  {
+    "index": 13,
+    "query": "Train from Hydrabad to Pune",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "HYB",
+      "destination": "PUNE",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from hydrabad to pune"
+  },
+  {
+    "index": 14,
+    "query": "Train from Delhii to Chennai",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "NDLS",
+      "destination": "MAS",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from delhii to chennai"
+  },
+  {
+    "index": 15,
+    "query": "Train from Mysuru to Bangluru",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "MYS",
+      "destination": "SBC",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from mysuru to bangluru"
+  },
+  {
+    "index": 16,
+    "query": "Train from Bengaluru to Mangaluru",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from bengaluru to mangaluru"
+  },
+  {
+    "index": 17,
+    "query": "Train from Bombay to Delhi",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "CSMT",
+      "destination": "NDLS",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from bombay to delhi"
+  },
+  {
+    "index": 18,
+    "query": "Train from Madras to Bangalore",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "MAS",
+      "destination": "SBC",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from madras to bangalore"
+  },
+  {
+    "index": 19,
+    "query": "Train from Calcutta to Delhi",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "HWH",
+      "destination": "NDLS",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from calcutta to delhi"
+  },
+  {
+    "index": 20,
+    "query": "Train from Trivandrum to Kochi",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "TVC",
+      "destination": "ERS",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from trivandrum to kochi"
+  },
+  {
+    "index": 21,
+    "query": "Train from Vizag to Chennai",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "VSKP",
+      "destination": "MAS",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from vizag to chennai"
+  },
+  {
+    "index": 22,
+    "query": "Tell me about train 12627",
+    "intent": "TRAIN_INFO",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": "12627",
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.54,
+    "normalized_text": "tell me about train 12627"
+  },
+  {
+    "index": 23,
+    "query": "Tell me about train 16585",
+    "intent": "TRAIN_INFO",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": "16585",
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.54,
+    "normalized_text": "tell me about train 16585"
+  },
+  {
+    "index": 24,
+    "query": "Route of train 12657",
+    "intent": "TRAIN_INFO",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": "12657",
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.54,
+    "normalized_text": "route of train 12657"
+  },
+  {
+    "index": 25,
+    "query": "Train details 12627",
+    "intent": "TRAIN_INFO",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": "12627",
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.54,
+    "normalized_text": "train details 12627"
+  },
+  {
+    "index": 26,
+    "query": "Show stops for train 12657",
+    "intent": "TRAIN_INFO",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": "12657",
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.54,
+    "normalized_text": "show stops for train 12657"
+  },
+  {
+    "index": 27,
+    "query": "How long is train 12657",
+    "intent": "TRAIN_INFO",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": "12657",
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.54,
+    "normalized_text": "how long is train 12657"
+  },
+  {
+    "index": 28,
+    "query": "Route from Bangalore to Mangalore",
+    "intent": "CHECK_ROUTE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "CHECK_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "route from bangalore to mangalore"
+  },
+  {
+    "index": 29,
+    "query": "Best route from Pune to Hyderabad",
+    "intent": "CHECK_ROUTE",
+    "entities": {
+      "source": "PUNE",
+      "destination": "HYB",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "CHECK_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "best route from pune to hyderabad"
+  },
+  {
+    "index": 30,
+    "query": "Direct route from Bangalore to Goa",
+    "intent": "CHECK_ROUTE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAO",
+      "travel_class": "EC",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "CHECK_ROUTE",
+    "confidence": 0.72,
+    "normalized_text": "direct route from bangalore to goa"
+  },
+  {
+    "index": 31,
+    "query": "Any direct train from Mysore to Chennai",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "MYS",
+      "destination": "MAS",
+      "travel_class": "EC",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.72,
+    "normalized_text": "any direct train from mysore to chennai"
+  },
+  {
+    "index": 32,
+    "query": "Show stations between Bangalore and Mangalore",
+    "intent": "CHECK_ROUTE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "CHECK_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "show stations between bangalore and mangalore"
+  },
+  {
+    "index": 33,
+    "query": "Show all stops for train 12627",
+    "intent": "TRAIN_INFO",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": "12627",
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.54,
+    "normalized_text": "show all stops for train 12627"
+  },
+  {
+    "index": 34,
+    "query": "Fare from Bangalore to Mangalore",
+    "intent": "FARE_ESTIMATE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.63,
+    "normalized_text": "fare from bangalore to mangalore"
+  },
+  {
+    "index": 35,
+    "query": "Sleeper fare from Bangalore to Mangalore",
+    "intent": "FARE_ESTIMATE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": "SL",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.72,
+    "normalized_text": "sleeper fare from bangalore to mangalore"
+  },
+  {
+    "index": 36,
+    "query": "3A fare from Bangalore to Mangalore",
+    "intent": "FARE_ESTIMATE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": "3A",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.72,
+    "normalized_text": "3a fare from bangalore to mangalore"
+  },
+  {
+    "index": 37,
+    "query": "General ticket cost Bangalore to Mangalore",
+    "intent": "FARE_ESTIMATE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": "GN",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.72,
+    "normalized_text": "general ticket cost bangalore to mangalore"
+  },
+  {
+    "index": 38,
+    "query": "Cheapest fare Bangalore to Mangalore",
+    "intent": "CHEAPEST_ROUTE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "cheapest"
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.6900000000000001,
+    "normalized_text": "cheapest fare bangalore to mangalore"
+  },
+  {
+    "index": 39,
+    "query": "Compare Sleeper and 3A",
+    "intent": "COMPARE_ROUTES",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": "SL",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.13999999999999996,
+    "normalized_text": "compare sleeper and 3a"
+  },
+  {
+    "index": 40,
+    "query": "Compare 2A and 3A",
+    "intent": "COMPARE_ROUTES",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": "3A",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.13999999999999996,
+    "normalized_text": "compare 2a and 3a"
+  },
+  {
+    "index": 41,
+    "query": "Fare for 2 passengers",
+    "intent": "FARE_ESTIMATE",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": 2,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.3,
+    "normalized_text": "fare for 2 passengers"
+  },
+  {
+    "index": 42,
+    "query": "Fare for 3 passengers",
+    "intent": "FARE_ESTIMATE",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": 3,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.3,
+    "normalized_text": "fare for 3 passengers"
+  },
+  {
+    "index": 43,
+    "query": "Fare for family of 4",
+    "intent": "FARE_ESTIMATE",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.25,
+    "normalized_text": "fare for family of 4"
+  },
+  {
+    "index": 44,
+    "query": "Fare for 5 adults",
+    "intent": "FARE_ESTIMATE",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.25,
+    "normalized_text": "fare for 5 adults"
+  },
+  {
+    "index": 45,
+    "query": "Fare for 2 sleeper tickets",
+    "intent": "FARE_ESTIMATE",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": "SL",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.34,
+    "normalized_text": "fare for 2 sleeper tickets"
+  },
+  {
+    "index": 46,
+    "query": "Cost for 3 AC tickets",
+    "intent": "FARE_ESTIMATE",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": "3A",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.34,
+    "normalized_text": "cost for 3 ac tickets"
+  },
+  {
+    "index": 47,
+    "query": "Which train is cheapest?",
+    "intent": "CHEAPEST_ROUTE",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "cheapest"
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.31,
+    "normalized_text": "which train is cheapest?"
+  },
+  {
+    "index": 48,
+    "query": "Cheapest train Bangalore to Mangalore",
+    "intent": "CHEAPEST_ROUTE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "cheapest"
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.6900000000000001,
+    "normalized_text": "cheapest train bangalore to mangalore"
+  },
+  {
+    "index": 49,
+    "query": "Lowest fare Bangalore to Chennai",
+    "intent": "CHEAPEST_ROUTE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAS",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "cheapest"
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.6900000000000001,
+    "normalized_text": "lowest fare bangalore to chennai"
+  },
+  {
+    "index": 50,
+    "query": "Most economical train",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": "EC",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.34,
+    "normalized_text": "most economical train"
+  },
+  {
+    "index": 51,
+    "query": "Budget train Bangalore to Goa",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAO",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "cheapest"
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.66,
+    "normalized_text": "budget train bangalore to goa"
+  },
+  {
+    "index": 52,
+    "query": "Fastest train Bangalore to Mangalore",
+    "intent": "FASTEST_ROUTE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "fastest"
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.6900000000000001,
+    "normalized_text": "fastest train bangalore to mangalore"
+  },
+  {
+    "index": 53,
+    "query": "Quickest route to Chennai",
+    "intent": "CHECK_ROUTE",
+    "entities": {
+      "source": "MAS",
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "fastest"
+    },
+    "missing": [
+      "destination",
+      "train_number"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.37000000000000005,
+    "normalized_text": "quickest route to chennai"
+  },
+  {
+    "index": 54,
+    "query": "Train with shortest journey",
+    "intent": "CHECK_ROUTE",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "shortest"
+    },
+    "missing": [
+      "source",
+      "destination",
+      "train_number"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.31,
+    "normalized_text": "train with shortest journey"
+  },
+  {
+    "index": 55,
+    "query": "Which train reaches first?",
+    "intent": "GREETING",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.45,
+    "normalized_text": "which train reaches first?"
+  },
+  {
+    "index": 56,
+    "query": "Fastest option Pune to Hyderabad",
+    "intent": "FASTEST_ROUTE",
+    "entities": {
+      "source": "PUNE",
+      "destination": "HYB",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "fastest"
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.49,
+    "normalized_text": "fastest option pune to hyderabad"
+  },
+  {
+    "index": 57,
+    "query": "Show trains after 8 PM",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.27999999999999997,
+    "normalized_text": "show trains after 8 pm"
+  },
+  {
+    "index": 58,
+    "query": "Show trains before 6 AM",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.27999999999999997,
+    "normalized_text": "show trains before 6 am"
+  },
+  {
+    "index": 59,
+    "query": "Show trains between 7 PM and 10 PM",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.25,
+    "normalized_text": "show trains between 7 pm and 10 pm"
+  },
+  {
+    "index": 60,
+    "query": "Morning trains",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.27999999999999997,
+    "normalized_text": "morning trains"
+  },
+  {
+    "index": 61,
+    "query": "Evening trains",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.27999999999999997,
+    "normalized_text": "evening trains"
+  },
+  {
+    "index": 62,
+    "query": "Night trains",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "overnight"
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.31,
+    "normalized_text": "night trains"
+  },
+  {
+    "index": 63,
+    "query": "Overnight trains",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "overnight"
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.31,
+    "normalized_text": "overnight trains"
+  },
+  {
+    "index": 64,
+    "query": "Trains leaving after 9 PM",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.27999999999999997,
+    "normalized_text": "trains leaving after 9 pm"
+  },
+  {
+    "index": 65,
+    "query": "Trains arriving before 8 AM",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.27999999999999997,
+    "normalized_text": "trains arriving before 8 am"
+  },
+  {
+    "index": 66,
+    "query": "Train tomorrow",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": "2026-06-19",
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.3,
+    "normalized_text": "train tomorrow"
+  },
+  {
+    "index": 67,
+    "query": "Train today",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": "2026-06-18",
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.3,
+    "normalized_text": "train today"
+  },
+  {
+    "index": 68,
+    "query": "Train tonight",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "overnight"
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.31,
+    "normalized_text": "train tonight"
+  },
+  {
+    "index": 69,
+    "query": "Train next Monday",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.25,
+    "normalized_text": "train next monday"
+  },
+  {
+    "index": 70,
+    "query": "Train this weekend",
+    "intent": "GREETING",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.45,
+    "normalized_text": "train this weekend"
+  },
+  {
+    "index": 71,
+    "query": "Train on Friday",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.25,
+    "normalized_text": "train on friday"
+  },
+  {
+    "index": 72,
+    "query": "Train after 2 days",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.27999999999999997,
+    "normalized_text": "train after 2 days"
+  },
+  {
+    "index": 73,
+    "query": "Train on 25th December",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": "EC",
+      "date": "2026-12-25",
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.39000000000000007,
+    "normalized_text": "train on 25th december"
+  },
+  {
+    "index": 74,
+    "query": "Book a ticket",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination",
+      "travel_class",
+      "passengers",
+      "travel_date"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.13,
+    "normalized_text": "book a ticket"
+  },
+  {
+    "index": 75,
+    "query": "Book a sleeper ticket",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": "SL",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination",
+      "passengers",
+      "travel_date"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.34,
+    "normalized_text": "book a sleeper ticket"
+  },
+  {
+    "index": 76,
+    "query": "Book 2 tickets",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": 2,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination",
+      "travel_class",
+      "travel_date"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.3,
+    "normalized_text": "book 2 tickets"
+  },
+  {
+    "index": 77,
+    "query": "Book 3 tickets",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": 3,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination",
+      "travel_class",
+      "travel_date"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.3,
+    "normalized_text": "book 3 tickets"
+  },
+  {
+    "index": 78,
+    "query": "Book a 3A ticket",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": "3A",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination",
+      "passengers",
+      "travel_date"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.34,
+    "normalized_text": "book a 3a ticket"
+  },
+  {
+    "index": 79,
+    "query": "Book 2 sleeper tickets",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": "SL",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination",
+      "passengers",
+      "travel_date"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.34,
+    "normalized_text": "book 2 sleeper tickets"
+  },
+  {
+    "index": 80,
+    "query": "Book ticket Bangalore to Hyderabad",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": "SBC",
+      "destination": "HYB",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "travel_class",
+      "passengers",
+      "travel_date"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.43,
+    "normalized_text": "book ticket bangalore to hyderabad"
+  },
+  {
+    "index": 81,
+    "query": "Book ticket Pune to Hyderabad tomorrow",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": "PUNE",
+      "destination": "HYB",
+      "travel_class": null,
+      "date": "2026-06-19",
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "travel_class",
+      "passengers"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.48000000000000004,
+    "normalized_text": "book ticket pune to hyderabad tomorrow"
+  },
+  {
+    "index": 82,
+    "query": "Book train after 8 PM",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination",
+      "travel_class",
+      "passengers",
+      "travel_date"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.27999999999999997,
+    "normalized_text": "book train after 8 pm"
+  },
+  {
+    "index": 83,
+    "query": "Book sleeper after 8 PM",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": "SL",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination",
+      "passengers",
+      "travel_date"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.37000000000000005,
+    "normalized_text": "book sleeper after 8 pm"
+  },
+  {
+    "index": 84,
+    "query": "Book 3A after 9 PM",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": "3A",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination",
+      "passengers",
+      "travel_date"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.37000000000000005,
+    "normalized_text": "book 3a after 9 pm"
+  },
+  {
+    "index": 85,
+    "query": "Book overnight train",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "overnight"
+    },
+    "missing": [
+      "source",
+      "destination",
+      "travel_class",
+      "passengers",
+      "travel_date"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.31,
+    "normalized_text": "book overnight train"
+  },
+  {
+    "index": 86,
+    "query": "Book morning train",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination",
+      "travel_class",
+      "passengers",
+      "travel_date"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.27999999999999997,
+    "normalized_text": "book morning train"
+  },
+  {
+    "index": 87,
+    "query": "Book train tomorrow after 8 PM",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": "2026-06-19",
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination",
+      "travel_class",
+      "passengers"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.33,
+    "normalized_text": "book train tomorrow after 8 pm"
+  },
+  {
+    "index": 88,
+    "query": "Book 2 tickets tomorrow evening",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": "2026-06-19",
+      "passengers": 2,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination",
+      "travel_class"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.38000000000000006,
+    "normalized_text": "book 2 tickets tomorrow evening"
+  },
+  {
+    "index": 89,
+    "query": "Book 2 sleeper tickets from Bangalore to Hyderabad",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": "SBC",
+      "destination": "HYB",
+      "travel_class": "SL",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "passengers",
+      "travel_date"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.52,
+    "normalized_text": "book 2 sleeper tickets from bangalore to hyderabad"
+  },
+  {
+    "index": 90,
+    "query": "Book 3A ticket from Pune to Hyderabad",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": "PUNE",
+      "destination": "HYB",
+      "travel_class": "3A",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "passengers",
+      "travel_date"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.52,
+    "normalized_text": "book 3a ticket from pune to hyderabad"
+  },
+  {
+    "index": 91,
+    "query": "Book AC ticket Bangalore to Chennai",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAS",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "travel_class",
+      "passengers",
+      "travel_date"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.43,
+    "normalized_text": "book ac ticket bangalore to chennai"
+  },
+  {
+    "index": 92,
+    "query": "Book 2A Bangalore to Goa",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAO",
+      "travel_class": "2A",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "passengers",
+      "travel_date"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.52,
+    "normalized_text": "book 2a bangalore to goa"
+  },
+  {
+    "index": 93,
+    "query": "Book sleeper Bangalore to Mangalore tomorrow",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": "SL",
+      "date": "2026-06-19",
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "passengers"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.5700000000000001,
+    "normalized_text": "book sleeper bangalore to mangalore tomorrow"
+  },
+  {
+    "index": 94,
+    "query": "Show trains from Bangalore to Mangalore please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "show trains from bangalore to mangalore please"
+  },
+  {
+    "index": 95,
+    "query": "Find trains from Bengaluru to Mangaluru please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "find trains from bengaluru to mangaluru please"
+  },
+  {
+    "index": 96,
+    "query": "Find trains between Bangalore and Mangalore please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "find trains between bangalore and mangalore please"
+  },
+  {
+    "index": 97,
+    "query": "Show trains from Pune to Hyderabad please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "PUNE",
+      "destination": "HYB",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "show trains from pune to hyderabad please"
+  },
+  {
+    "index": 98,
+    "query": "Show trains from Delhi to Chennai please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "NDLS",
+      "destination": "MAS",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "show trains from delhi to chennai please"
+  },
+  {
+    "index": 99,
+    "query": "Show trains from Mysore to Bangalore please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "MYS",
+      "destination": "SBC",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "show trains from mysore to bangalore please"
+  },
+  {
+    "index": 100,
+    "query": "Show trains from Mangalore to Bangalore please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "MAQ",
+      "destination": "SBC",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "show trains from mangalore to bangalore please"
+  },
+  {
+    "index": 101,
+    "query": "Any trains from Chennai to Hyderabad? please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "MAS",
+      "destination": "HYB",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "any trains from chennai to hyderabad? please"
+  },
+  {
+    "index": 102,
+    "query": "Train from Bangalore to Goa please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAO",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from bangalore to goa please"
+  },
+  {
+    "index": 103,
+    "query": "Train from Hubli to Bangalore please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "UBL",
+      "destination": "SBC",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from hubli to bangalore please"
+  },
+  {
+    "index": 104,
+    "query": "Train from Banglore to Manglore please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from banglore to manglore please"
+  },
+  {
+    "index": 105,
+    "query": "Train from Bengluru to Mangaloor please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from bengluru to mangaloor please"
+  },
+  {
+    "index": 106,
+    "query": "Train from Hydrabad to Pune please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "HYB",
+      "destination": "PUNE",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from hydrabad to pune please"
+  },
+  {
+    "index": 107,
+    "query": "Train from Delhii to Chennai please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "NDLS",
+      "destination": "MAS",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from delhii to chennai please"
+  },
+  {
+    "index": 108,
+    "query": "Train from Mysuru to Bangluru please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "MYS",
+      "destination": "SBC",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from mysuru to bangluru please"
+  },
+  {
+    "index": 109,
+    "query": "Train from Bengaluru to Mangaluru please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from bengaluru to mangaluru please"
+  },
+  {
+    "index": 110,
+    "query": "Train from Bombay to Delhi please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "CSMT",
+      "destination": "NDLS",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from bombay to delhi please"
+  },
+  {
+    "index": 111,
+    "query": "Train from Madras to Bangalore please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "MAS",
+      "destination": "SBC",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from madras to bangalore please"
+  },
+  {
+    "index": 112,
+    "query": "Train from Calcutta to Delhi please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "HWH",
+      "destination": "NDLS",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from calcutta to delhi please"
+  },
+  {
+    "index": 113,
+    "query": "Train from Trivandrum to Kochi please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "TVC",
+      "destination": "ERS",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from trivandrum to kochi please"
+  },
+  {
+    "index": 114,
+    "query": "Train from Vizag to Chennai please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "VSKP",
+      "destination": "MAS",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from vizag to chennai please"
+  },
+  {
+    "index": 115,
+    "query": "Tell me about train 12627 please",
+    "intent": "TRAIN_INFO",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": "12627",
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.54,
+    "normalized_text": "tell me about train 12627 please"
+  },
+  {
+    "index": 116,
+    "query": "Tell me about train 16585 please",
+    "intent": "TRAIN_INFO",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": "16585",
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.54,
+    "normalized_text": "tell me about train 16585 please"
+  },
+  {
+    "index": 117,
+    "query": "Route of train 12657 please",
+    "intent": "TRAIN_INFO",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": "12657",
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.54,
+    "normalized_text": "route of train 12657 please"
+  },
+  {
+    "index": 118,
+    "query": "Train details 12627 please",
+    "intent": "TRAIN_INFO",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": "12627",
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.54,
+    "normalized_text": "train details 12627 please"
+  },
+  {
+    "index": 119,
+    "query": "Show stops for train 12657 please",
+    "intent": "TRAIN_INFO",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": "12657",
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.54,
+    "normalized_text": "show stops for train 12657 please"
+  },
+  {
+    "index": 120,
+    "query": "How long is train 12657 please",
+    "intent": "TRAIN_INFO",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": "12657",
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.54,
+    "normalized_text": "how long is train 12657 please"
+  },
+  {
+    "index": 121,
+    "query": "Route from Bangalore to Mangalore please",
+    "intent": "CHECK_ROUTE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "CHECK_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "route from bangalore to mangalore please"
+  },
+  {
+    "index": 122,
+    "query": "Best route from Pune to Hyderabad please",
+    "intent": "CHECK_ROUTE",
+    "entities": {
+      "source": "PUNE",
+      "destination": "HYB",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "CHECK_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "best route from pune to hyderabad please"
+  },
+  {
+    "index": 123,
+    "query": "Direct route from Bangalore to Goa please",
+    "intent": "CHECK_ROUTE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAO",
+      "travel_class": "EC",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "CHECK_ROUTE",
+    "confidence": 0.72,
+    "normalized_text": "direct route from bangalore to goa please"
+  },
+  {
+    "index": 124,
+    "query": "Any direct train from Mysore to Chennai please",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "MYS",
+      "destination": "MAS",
+      "travel_class": "EC",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.72,
+    "normalized_text": "any direct train from mysore to chennai please"
+  },
+  {
+    "index": 125,
+    "query": "Show stations between Bangalore and Mangalore please",
+    "intent": "CHECK_ROUTE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "CHECK_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "show stations between bangalore and mangalore please"
+  },
+  {
+    "index": 126,
+    "query": "Show all stops for train 12627 please",
+    "intent": "TRAIN_INFO",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": "12627",
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.54,
+    "normalized_text": "show all stops for train 12627 please"
+  },
+  {
+    "index": 127,
+    "query": "Fare from Bangalore to Mangalore please",
+    "intent": "FARE_ESTIMATE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.63,
+    "normalized_text": "fare from bangalore to mangalore please"
+  },
+  {
+    "index": 128,
+    "query": "Sleeper fare from Bangalore to Mangalore please",
+    "intent": "FARE_ESTIMATE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": "SL",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.72,
+    "normalized_text": "sleeper fare from bangalore to mangalore please"
+  },
+  {
+    "index": 129,
+    "query": "3A fare from Bangalore to Mangalore please",
+    "intent": "FARE_ESTIMATE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": "3A",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.72,
+    "normalized_text": "3a fare from bangalore to mangalore please"
+  },
+  {
+    "index": 130,
+    "query": "General ticket cost Bangalore to Mangalore please",
+    "intent": "FARE_ESTIMATE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": "GN",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.72,
+    "normalized_text": "general ticket cost bangalore to mangalore please"
+  },
+  {
+    "index": 131,
+    "query": "Cheapest fare Bangalore to Mangalore please",
+    "intent": "CHEAPEST_ROUTE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "cheapest"
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.6900000000000001,
+    "normalized_text": "cheapest fare bangalore to mangalore please"
+  },
+  {
+    "index": 132,
+    "query": "Compare Sleeper and 3A please",
+    "intent": "COMPARE_ROUTES",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": "SL",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.13999999999999996,
+    "normalized_text": "compare sleeper and 3a please"
+  },
+  {
+    "index": 133,
+    "query": "Compare 2A and 3A please",
+    "intent": "COMPARE_ROUTES",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": "3A",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.13999999999999996,
+    "normalized_text": "compare 2a and 3a please"
+  },
+  {
+    "index": 134,
+    "query": "Train from Madras to Bengaluru",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "MAS",
+      "destination": "SBC",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from madras to bengaluru"
+  },
+  {
+    "index": 135,
+    "query": "Route from Bengaluru to Mangaluru",
+    "intent": "CHECK_ROUTE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "CHECK_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "route from bengaluru to mangaluru"
+  },
+  {
+    "index": 136,
+    "query": "Direct route from Bengaluru to Goa",
+    "intent": "CHECK_ROUTE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAO",
+      "travel_class": "EC",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "CHECK_ROUTE",
+    "confidence": 0.72,
+    "normalized_text": "direct route from bengaluru to goa"
+  },
+  {
+    "index": 137,
+    "query": "Show stations between Bengaluru and Mangaluru",
+    "intent": "CHECK_ROUTE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "CHECK_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "show stations between bengaluru and mangaluru"
+  },
+  {
+    "index": 138,
+    "query": "Fare from Bengaluru to Mangaluru",
+    "intent": "FARE_ESTIMATE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.63,
+    "normalized_text": "fare from bengaluru to mangaluru"
+  },
+  {
+    "index": 139,
+    "query": "Sleeper fare from Bengaluru to Mangaluru",
+    "intent": "FARE_ESTIMATE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": "SL",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.72,
+    "normalized_text": "sleeper fare from bengaluru to mangaluru"
+  },
+  {
+    "index": 140,
+    "query": "3A fare from Bengaluru to Mangaluru",
+    "intent": "FARE_ESTIMATE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": "3A",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.72,
+    "normalized_text": "3a fare from bengaluru to mangaluru"
+  },
+  {
+    "index": 141,
+    "query": "General ticket cost Bengaluru to Mangaluru",
+    "intent": "FARE_ESTIMATE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": "GN",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.72,
+    "normalized_text": "general ticket cost bengaluru to mangaluru"
+  },
+  {
+    "index": 142,
+    "query": "Cheapest fare Bengaluru to Mangaluru",
+    "intent": "CHEAPEST_ROUTE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "cheapest"
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.6900000000000001,
+    "normalized_text": "cheapest fare bengaluru to mangaluru"
+  },
+  {
+    "index": 143,
+    "query": "Cheapest train Bengaluru to Mangaluru",
+    "intent": "CHEAPEST_ROUTE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "cheapest"
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.6900000000000001,
+    "normalized_text": "cheapest train bengaluru to mangaluru"
+  },
+  {
+    "index": 144,
+    "query": "Lowest fare Bengaluru to Chennai",
+    "intent": "CHEAPEST_ROUTE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAS",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "cheapest"
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.6900000000000001,
+    "normalized_text": "lowest fare bengaluru to chennai"
+  },
+  {
+    "index": 145,
+    "query": "Train from Bangalore to Mangalore on day 1",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from bangalore to mangalore on day 1"
+  },
+  {
+    "index": 146,
+    "query": "Train from Bangalore to Mangalore on day 2",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from bangalore to mangalore on day 2"
+  },
+  {
+    "index": 147,
+    "query": "Train from Bangalore to Mangalore on day 3",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from bangalore to mangalore on day 3"
+  },
+  {
+    "index": 148,
+    "query": "Train from Bangalore to Mangalore on day 4",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from bangalore to mangalore on day 4"
+  },
+  {
+    "index": 149,
+    "query": "Train from Bangalore to Mangalore on day 5",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from bangalore to mangalore on day 5"
+  },
+  {
+    "index": 150,
+    "query": "Train from Bangalore to Mangalore on day 6",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from bangalore to mangalore on day 6"
+  },
+  {
+    "index": 151,
+    "query": "Train from Bangalore to Mangalore on day 7",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from bangalore to mangalore on day 7"
+  },
+  {
+    "index": 152,
+    "query": "Train from Bangalore to Mangalore on day 8",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from bangalore to mangalore on day 8"
+  },
+  {
+    "index": 153,
+    "query": "Train from Bangalore to Mangalore on day 9",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from bangalore to mangalore on day 9"
+  },
+  {
+    "index": 154,
+    "query": "Train from Bangalore to Mangalore on day 10",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from bangalore to mangalore on day 10"
+  },
+  {
+    "index": 155,
+    "query": "I need a train",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.13,
+    "normalized_text": "i need a train"
+  },
+  {
+    "index": 156,
+    "query": "Show options",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.0,
+    "normalized_text": "show options"
+  },
+  {
+    "index": 157,
+    "query": "Need cheapest one",
+    "intent": "CHEAPEST_ROUTE",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": 1,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "cheapest"
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.15999999999999998,
+    "normalized_text": "need cheapest one"
+  },
+  {
+    "index": 158,
+    "query": "Need fastest one",
+    "intent": "FASTEST_ROUTE",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": 1,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "fastest"
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.15999999999999998,
+    "normalized_text": "need fastest one"
+  },
+  {
+    "index": 159,
+    "query": "Need something comfortable",
+    "intent": "GREETING",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "comfort"
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.36,
+    "normalized_text": "need something comfortable"
+  },
+  {
+    "index": 160,
+    "query": "Find a train for me",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": null,
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source",
+      "destination"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.13,
+    "normalized_text": "find a train for me"
+  },
+  {
+    "index": 161,
+    "query": "Train from XYZ to ABC",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "XYZ",
+      "destination": "ABC",
+      "travel_class": null,
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.63,
+    "normalized_text": "train from xyz to abc"
+  },
+  {
+    "index": 162,
+    "query": "Train from FakeCity to Bangalore",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": null,
+      "destination": "SBC",
+      "travel_class": "EC",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [
+      "source"
+    ],
+    "clarification": true,
+    "next_action": "ASK_CLARIFICATION",
+    "confidence": 0.43,
+    "normalized_text": "train from fakecity to bangalore"
+  },
+  {
+    "index": 163,
+    "query": "Train from Bangalore to UnknownStation",
+    "intent": "STATION_QUERY",
+    "entities": {
+      "source": "SBC",
+      "destination": null,
+      "travel_class": null,
+      "date": "2026-06-18",
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "RESPOND",
+    "confidence": 0.5900000000000001,
+    "normalized_text": "train from bangalore to unknownstation"
+  },
+  {
+    "index": 164,
+    "query": "Find cheapest sleeper train from Bangalore to Mangalore tomorrow after 8 PM and compare it with the fastest option and tell me which is better for a family of four.",
+    "intent": "CHEAPEST_ROUTE",
+    "entities": {
+      "source": "SBC",
+      "destination": "MAQ",
+      "travel_class": "SL",
+      "date": "2026-06-19",
+      "passengers": 4,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": "cheapest"
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.9100000000000001,
+    "normalized_text": "find cheapest sleeper train from bangalore to mangalore tomorrow after 8 pm and compare it with the fastest option and tell me which is better for a family of four."
+  },
+  {
+    "index": 165,
+    "query": "Book two 3A tickets from Bangalore to Hyderabad tomorrow evening and show total fare.",
+    "intent": "BOOK_TICKET",
+    "entities": {
+      "source": "SBC",
+      "destination": "HYB",
+      "travel_class": "3A",
+      "date": "2026-06-19",
+      "passengers": 2,
+      "booking_id": null,
+      "train_number": null,
+      "budget": null,
+      "preference": null
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "BOOK_TICKET",
+    "confidence": 0.8500000000000001,
+    "normalized_text": "book two 3a tickets from bangalore to hyderabad tomorrow evening and show total fare."
+  },
+  {
+    "index": 166,
+    "query": "Recommend an overnight train from Pune to Hyderabad under ₹1000.",
+    "intent": "ROUTE_SEARCH",
+    "entities": {
+      "source": "PUNE",
+      "destination": "HYB",
+      "travel_class": "EC",
+      "date": null,
+      "passengers": null,
+      "booking_id": null,
+      "train_number": null,
+      "budget": 1000.0,
+      "preference": "overnight"
+    },
+    "missing": [],
+    "clarification": false,
+    "next_action": "SEARCH_ROUTE",
+    "confidence": 0.78,
+    "normalized_text": "recommend an overnight train from pune to hyderabad under ₹1000."
+  },
+  {
+    "conversation_id": 1,
+    "steps": [
+      {
+        "conversation": 1,
+        "step": 1,
+        "message": "Book a ticket from Bangalore to Hyderabad",
+        "intent": "BOOK_TICKET",
+        "entities": {
+          "source": "SBC",
+          "destination": "HYB",
+          "travel_class": null,
+          "date": null,
+          "passengers": null,
+          "booking_id": null,
+          "train_number": null,
+          "budget": null,
+          "preference": null
+        },
+        "missing": [
+          "travel_class",
+          "passengers",
+          "travel_date"
+        ],
+        "clarification": true,
+        "next_action": "ASK_CLARIFICATION",
+        "confidence": 0.31,
+        "normalized_text": "book a ticket from bangalore to hyderabad"
+      },
+      {
+        "conversation": 1,
+        "step": 2,
+        "message": "Tomorrow",
+        "intent": "BOOK_TICKET",
+        "entities": {
+          "source": "SBC",
+          "destination": "HYB",
+          "travel_class": null,
+          "date": "2026-06-19",
+          "passengers": null,
+          "booking_id": null,
+          "train_number": null,
+          "budget": null,
+          "preference": null
+        },
+        "missing": [
+          "travel_class",
+          "passengers"
+        ],
+        "clarification": true,
+        "next_action": "ASK_CLARIFICATION",
+        "confidence": 0.53,
+        "normalized_text": "tomorrow"
+      },
+      {
+        "conversation": 1,
+        "step": 3,
+        "message": "3A",
+        "intent": "BOOK_TICKET",
+        "entities": {
+          "source": "SBC",
+          "destination": "HYB",
+          "travel_class": "3A",
+          "date": "2026-06-19",
+          "passengers": null,
+          "booking_id": null,
+          "train_number": null,
+          "budget": null,
+          "preference": null
+        },
+        "missing": [
+          "passengers"
+        ],
+        "clarification": true,
+        "next_action": "ASK_CLARIFICATION",
+        "confidence": 0.6200000000000001,
+        "normalized_text": "3a"
+      },
+      {
+        "conversation": 1,
+        "step": 4,
+        "message": "2 passengers",
+        "intent": "BOOK_TICKET",
+        "entities": {
+          "source": "SBC",
+          "destination": "HYB",
+          "travel_class": "3A",
+          "date": "2026-06-19",
+          "passengers": 2,
+          "booking_id": null,
+          "train_number": null,
+          "budget": null,
+          "preference": null
+        },
+        "missing": [],
+        "clarification": false,
+        "next_action": "BOOK_TICKET",
+        "confidence": 0.8700000000000001,
+        "normalized_text": "2 passengers"
+      },
+      {
+        "conversation": 1,
+        "step": 5,
+        "message": "Confirm booking",
+        "intent": "BOOK_TICKET",
+        "entities": {
+          "source": "SBC",
+          "destination": "HYB",
+          "travel_class": "3A",
+          "date": "2026-06-19",
+          "passengers": 2,
+          "booking_id": null,
+          "train_number": null,
+          "budget": null,
+          "preference": null
+        },
+        "missing": [],
+        "clarification": false,
+        "next_action": "BOOK_TICKET",
+        "confidence": 0.8700000000000001,
+        "normalized_text": "confirm booking"
+      }
+    ]
+  },
+  {
+    "conversation_id": 2,
+    "steps": [
+      {
+        "conversation": 2,
+        "step": 1,
+        "message": "Show trains Bangalore to Mangalore",
+        "intent": "ROUTE_SEARCH",
+        "entities": {
+          "source": "SBC",
+          "destination": "MAQ",
+          "travel_class": null,
+          "date": null,
+          "passengers": null,
+          "booking_id": null,
+          "train_number": null,
+          "budget": null,
+          "preference": null
+        },
+        "missing": [],
+        "clarification": false,
+        "next_action": "SEARCH_ROUTE",
+        "confidence": 0.63,
+        "normalized_text": "show trains bangalore to mangalore"
+      },
+      {
+        "conversation": 2,
+        "step": 2,
+        "message": "Which is cheapest?",
+        "intent": "CHEAPEST_ROUTE",
+        "entities": {
+          "source": "SBC",
+          "destination": "MAQ",
+          "travel_class": null,
+          "date": null,
+          "passengers": null,
+          "booking_id": null,
+          "train_number": null,
+          "budget": null,
+          "preference": "cheapest"
+        },
+        "missing": [],
+        "clarification": false,
+        "next_action": "SEARCH_ROUTE",
+        "confidence": 0.54,
+        "normalized_text": "which is cheapest?"
+      },
+      {
+        "conversation": 2,
+        "step": 3,
+        "message": "Show fare",
+        "intent": "FARE_ESTIMATE",
+        "entities": {
+          "source": "SBC",
+          "destination": "MAQ",
+          "travel_class": null,
+          "date": null,
+          "passengers": null,
+          "booking_id": null,
+          "train_number": null,
+          "budget": null,
+          "preference": null
+        },
+        "missing": [],
+        "clarification": false,
+        "next_action": "RESPOND",
+        "confidence": 0.68,
+        "normalized_text": "show fare"
+      },
+      {
+        "conversation": 2,
+        "step": 4,
+        "message": "Book the first one",
+        "intent": "BOOK_TICKET",
+        "entities": {
+          "source": "SBC",
+          "destination": "MAQ",
+          "travel_class": null,
+          "date": null,
+          "passengers": 1,
+          "booking_id": null,
+          "train_number": null,
+          "budget": null,
+          "preference": null
+        },
+        "missing": [
+          "travel_class",
+          "travel_date"
+        ],
+        "clarification": true,
+        "next_action": "ASK_CLARIFICATION",
+        "confidence": 0.53,
+        "normalized_text": "book the first one"
+      },
+      {
+        "conversation": 2,
+        "step": 5,
+        "message": "Change to sleeper class",
+        "intent": "BOOK_TICKET",
+        "entities": {
+          "source": "SBC",
+          "destination": "MAQ",
+          "travel_class": "SL",
+          "date": null,
+          "passengers": 1,
+          "booking_id": null,
+          "train_number": null,
+          "budget": null,
+          "preference": null
+        },
+        "missing": [
+          "travel_date"
+        ],
+        "clarification": true,
+        "next_action": "ASK_CLARIFICATION",
+        "confidence": 0.6200000000000001,
+        "normalized_text": "change to sleeper class"
+      },
+      {
+        "conversation": 2,
+        "step": 6,
+        "message": "Confirm booking",
+        "intent": "BOOK_TICKET",
+        "entities": {
+          "source": "SBC",
+          "destination": "MAQ",
+          "travel_class": "SL",
+          "date": null,
+          "passengers": 1,
+          "booking_id": null,
+          "train_number": null,
+          "budget": null,
+          "preference": null
+        },
+        "missing": [
+          "travel_date"
+        ],
+        "clarification": true,
+        "next_action": "ASK_CLARIFICATION",
+        "confidence": 0.6200000000000001,
+        "normalized_text": "confirm booking"
+      }
+    ]
+  }
+]

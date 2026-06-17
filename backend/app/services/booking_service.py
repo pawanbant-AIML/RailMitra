@@ -97,18 +97,32 @@ class BookingService:
             return max(1, min(12, int(text)))
         return max(1, min(12, _WORD_TO_NUM.get(text, 1)))
 
-    def _normalize_date(self, value: Any) -> str:
+    def _normalize_date(self, value: Any) -> datetime:
+        """Return a datetime at midnight for the given input.
+
+        Accepts 'today', 'tomorrow', ISO date strings (YYYY-MM-DD) or
+        ISO datetimes. Falls back to today at 00:00 if parsing fails.
+        """
         if not value:
-            return date.today().isoformat()
+            return datetime.combine(date.today(), datetime.min.time())
         text = str(value).strip()
-        if text.lower() in {"today", "now"}:
-            return date.today().isoformat()
-        if text.lower() == "tomorrow":
-            return (date.today() + timedelta(days=1)).isoformat()
+        low = text.lower()
+        if low in {"today", "now"}:
+            return datetime.combine(date.today(), datetime.min.time())
+        if low == "tomorrow":
+            return datetime.combine(date.today() + timedelta(days=1), datetime.min.time())
+        # Try parse ISO date first
         try:
-            return datetime.fromisoformat(text).date().isoformat()
+            d = date.fromisoformat(text)
+            return datetime.combine(d, datetime.min.time())
         except Exception:
-            return date.today().isoformat()
+            pass
+        # Try full datetime
+        try:
+            dt = datetime.fromisoformat(text)
+            return dt
+        except Exception:
+            return datetime.combine(date.today(), datetime.min.time())
 
     def _normalize_time(self, value: Any) -> Optional[str]:
         if value is None:

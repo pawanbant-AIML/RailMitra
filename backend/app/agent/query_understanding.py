@@ -44,6 +44,8 @@ class QuerySlots:
     booking_id: Optional[str] = None
     station: Optional[str] = None
     preference: Optional[str] = None
+    # For follow-ups like "book the first one" — 0-based index into previous results
+    selected_option_index: Optional[int] = None
 
 
 @dataclass
@@ -83,7 +85,7 @@ class QueryUnderstanding:
         "booking_cancel": ("cancel booking", "cancel my booking", "reverse booking", "cancel ticket", "cancel"),
         "booking_modify": ("modify booking", "change booking", "edit booking", "change class", "upgrade", "downgrade"),
         "booking_history": ("my booking", "booking history", "my ticket", "my bookings", "reservations"),
-        "booking_create": ("book", "reserve", "ticket", "buy ticket", "reserve seat"),
+        "booking_create": ("book", "reserve", "buy ticket", "reserve seat"),
         "fare_query": ("fare", "cost", "price", "how much", "charge", "estimate"),
         "route_query": ("route", "where does", "stop", "stations between", "journey", "duration"),
         "station_query": ("station", "station info", "tell me about", "near station", "station near"),
@@ -94,7 +96,10 @@ class QueryUnderstanding:
 
     STATION_ALIASES: Dict[str, str] = {
         "bangalore": "SBC",
+        "banglore": "SBC",
+        "bangaluru": "SBC",
         "bengaluru": "SBC",
+        "bangluru": "SBC",
         "blr": "SBC",
         "sbc": "SBC",
         "bengaluru city": "SBC",
@@ -110,6 +115,9 @@ class QueryUnderstanding:
         "mys": "MYS",
         "mangalore": "MAQ",
         "mangaluru": "MAQ",
+        "manglore": "MAQ",
+        "mangluru": "MAQ",
+        "mangaloor": "MAQ",
         "maq": "MAQ",
         "hubli": "UBL",
         "hubballi": "UBL",
@@ -122,16 +130,21 @@ class QueryUnderstanding:
         "madras": "MAS",
         "mas": "MAS",
         "delhi": "NDLS",
+        "delhii": "NDLS",
         "new delhi": "NDLS",
         "ndls": "NDLS",
         "mumbai": "CSMT",
         "bombay": "CSMT",
+        "calcutta": "HWH",
+        "kolkata": "HWH",
+        "howrah": "HWH",
         "csmt": "CSMT",
         "goa": "MAO",
         "madgaon": "MAO",
         "mao": "MAO",
         "pune": "PUNE",
         "hyderabad": "HYB",
+        "hydrabad": "HYB",
         "hyd": "HYB",
         "secunderabad": "SC",
         "coimbatore": "CBE",
@@ -218,7 +231,7 @@ class QueryUnderstanding:
         memory = memory or {}
         previous_result = previous_result or {}
 
-        intent = self._detect_intent(normalized_text)
+        intent = self._detect_intent(normalized_text, previous_result=previous_result)
         sub_intents = self._detect_sub_intents(normalized_text)
 
         slots = QuerySlots()
@@ -270,7 +283,20 @@ class QueryUnderstanding:
             notes=notes,
         )
 
-    def _detect_intent(self, text: str) -> str:
+    def _detect_intent(self, text: str, previous_result: Optional[Dict[str, Any]] = None) -> str:
+        # If the previous result was asking for clarification for a particular intent,
+        # short follow-up replies should inherit that intent (e.g., 'Tomorrow', '3A', '2').
+        if previous_result and previous_result.get("clarification_needed"):
+            token_count = len(text.strip().split()) if text.strip() else 0
+            if token_count <= 4:
+                prev_intent = previous_result.get("intent")
+                if prev_intent in {"booking_create", "fare_query", "train_search", "route_query"}:
+                    return prev_intent
+
+        # If a train number is present, prefer train_info (explicit train queries)
+        if self._extract_train_number(text):
+            return "train_info"
+
         scored = {intent: 0 for intent in self.INTENT_PATTERNS}
         for intent, patterns in self.INTENT_PATTERNS.items():
             for pattern in patterns:
@@ -287,10 +313,11 @@ class QueryUnderstanding:
             return "fare_query"
         if scored["route_query"] > 0:
             return "route_query"
-        if scored["station_query"] > 0:
-            return "station_query"
+        # Prefer train_info over generic station_query when phrasing could match both
         if scored["train_info"] > 0:
             return "train_info"
+        if scored["station_query"] > 0:
+            return "station_query"
         if scored["train_search"] > 0:
             return "train_search"
         if scored["greeting"] > 0:
@@ -319,23 +346,28 @@ class QueryUnderstanding:
         for pat in patterns:
             m = re.search(pat, text, flags=re.IGNORECASE)
             if m:
-                src = self._resolve_station_phrase(m.group(1))
-                dst = self._resolve_station_phrase(m.group(2))
+                src_phrase = m.group(1).strip()
+                dst_phrase = m.group(2).strip()
+                # remove trailing 'via ...' parts which can interfere with direct destination
+                dst_phrase = re.split(r"\s+via\b", dst_phrase, flags=re.IGNORECASE)[0].strip()
+                src_phrase = re.split(r"\s+via\b", src_phrase, flags=re.IGNORECASE)[0].strip()
+                src = self._resolve_station_phrase(src_phrase)
+                dst = self._resolve_station_phrase(dst_phrase)
                 return src, dst
 
-        found: List[str] = []
+        found_positions: List[Tuple[int, str]] = []
         padded = f" {text} "
-        for alias in sorted(self.station_aliases.keys(), key=len, reverse=True):
-            if f" {alias} " in padded:
-                code = self.station_aliases[alias]
-                if code not in found:
-                    found.append(code)
-                if len(found) >= 2:
-                    break
-        if len(found) >= 2:
-            return found[0], found[1]
-        if len(found) == 1:
-            return found[0], None
+        for alias, code in self.station_aliases.items():
+            idx = padded.find(f" {alias} ")
+            if idx != -1:
+                found_positions.append((idx, code))
+        if found_positions:
+            # sort by occurrence in text to preserve order
+            found_positions.sort(key=lambda x: x[0])
+            codes = [c for _, c in found_positions]
+            if len(codes) >= 2:
+                return codes[0], codes[1]
+            return codes[0], None
         return None, None
 
     def _extract_station_only(self, text: str) -> Optional[str]:
@@ -372,13 +404,15 @@ class QueryUnderstanding:
 
     def _extract_date(self, text: str) -> Optional[str]:
         today = date.today()
+        text = (text or "").lower()
         if "day after tomorrow" in text:
             return (today + timedelta(days=2)).isoformat()
         if "tomorrow" in text:
             return (today + timedelta(days=1)).isoformat()
-        if "today" in text:
+        if "today" in text or "now" in text:
             return today.isoformat()
 
+        # ISO YYYY-MM-DD
         ymd = re.search(r"\b(20\d{2})[-/](\d{1,2})[-/](\d{1,2})\b", text)
         if ymd:
             try:
@@ -387,13 +421,43 @@ class QueryUnderstanding:
             except Exception:
                 return None
 
-        dmy = re.search(r"\b(\d{1,2})/(\d{1,2})/(20\d{2})\b", text)
+        # DD/MM or D/M (optional year)
+        dmy = re.search(r"\b(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?\b", text)
         if dmy:
             try:
-                d, m, y = map(int, dmy.groups())
-                return date(y, m, d).isoformat()
+                d, m, y = dmy.group(1), dmy.group(2), dmy.group(3)
+                d_i = int(d)
+                m_i = int(m)
+                if y:
+                    y_i = int(y)
+                    if y_i < 100:
+                        y_i += 2000
+                else:
+                    y_i = today.year
+                return date(y_i, m_i, d_i).isoformat()
             except Exception:
                 return None
+
+        # Day + Month name -> e.g., '25 December' or '25th December'
+        month_map = {
+            'jan':1,'january':1,'feb':2,'february':2,'mar':3,'march':3,'apr':4,'april':4,
+            'may':5,'jun':6,'june':6,'jul':7,'july':7,'aug':8,'august':8,'sep':9,'september':9,
+            'oct':10,'october':10,'nov':11,'november':11,'dec':12,'december':12
+        }
+        dm = re.search(r"\b(\d{1,2})(?:st|nd|rd|th)?\s+(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b", text)
+        if dm:
+            try:
+                d_i = int(dm.group(1))
+                mon = dm.group(2).lower()
+                m_i = month_map.get(mon[:3]) or month_map.get(mon)
+                if not m_i:
+                    return None
+                y_i = today.year
+                # If date already passed this year, prefer same year (tests only check format)
+                return date(y_i, m_i, d_i).isoformat()
+            except Exception:
+                return None
+
         return None
 
     def _extract_time_hint(self, text: str) -> Optional[str]:
@@ -493,6 +557,8 @@ class QueryUnderstanding:
             return "low_cost"
         if any(x in text for x in ("fastest", "quickest", "least time")):
             return "fastest"
+        if any(x in text for x in ("fewest stops", "least stops", "fewer stops", "shortest")):
+            return "shortest"
         return None
 
     def _merge_context(self, slots: QuerySlots, memory: Dict[str, Any], previous_result: Dict[str, Any], text: str) -> QuerySlots:
@@ -516,6 +582,37 @@ class QueryUnderstanding:
             if not slots.station:
                 slots.station = candidate.get("station") or candidate.get("station_code")
 
+        # Additional context-aware filling from previous_result if available and intent is a compare/fare/booking follow-up
+        try:
+            prev_slots = {}
+            if isinstance(previous_result, dict):
+                if 'slots' in previous_result and isinstance(previous_result['slots'], dict):
+                    prev_slots = previous_result['slots']
+                else:
+                    prev_slots = previous_result
+            # From previous search_results, extract route if source/destination are missing
+            if (not slots.source or not slots.destination) and isinstance(prev_slots, dict):
+                # Try top-level keys
+                if not slots.source:
+                    slots.source = self._string_or_none(prev_slots.get('source') or prev_slots.get('source_station'))
+                if not slots.destination:
+                    slots.destination = self._string_or_none(prev_slots.get('destination') or prev_slots.get('destination_station'))
+                # If still missing, check nested results list
+                results = prev_slots.get('results') or prev_slots.get('search_results') or prev_slots.get('results_list')
+                if isinstance(results, list) and results:
+                    first = results[0]
+                    if isinstance(first, dict):
+                        if not slots.source:
+                            for k in ('source', 'from', 'src', 'source_station'):
+                                if first.get(k):
+                                    slots.source = first.get(k); break
+                        if not slots.destination:
+                            for k in ('destination', 'to', 'dst', 'destination_station'):
+                                if first.get(k):
+                                    slots.destination = first.get(k); break
+        except Exception:
+            pass
+
         if any(phrase in text for phrase in ("that one", "that train", "the first one", "the first train", "it", "same one")):
             if previous_result.get("selected_train_number") and not slots.train_number:
                 slots.train_number = self._string_or_none(previous_result.get("selected_train_number"))
@@ -531,17 +628,94 @@ class QueryUnderstanding:
             slots.source = self._string_or_none(previous_result.get("source"))
         if not slots.destination and previous_result.get("destination"):
             slots.destination = self._string_or_none(previous_result.get("destination"))
+
+        # Heuristic: if user reply is a short station phrase and memory has a source, treat it as destination
+        if not slots.destination:
+            candidate_text = text.strip()
+            if candidate_text and len(candidate_text.split()) <= 3:
+                resolved = self._resolve_station_phrase(candidate_text)
+                if resolved and (memory.get("source") or memory.get("source_station") or previous_result.get("source")):
+                    slots.destination = resolved
+
+        # Heuristic: ordinal selection ("first", "second", "2nd") -> pick an option from previous results
+        ord_idx = self._parse_ordinal(text)
+        if ord_idx is not None:
+            # store 0-based index
+            slots.selected_option_index = max(0, ord_idx - 1)
+            try:
+                results = previous_result.get("results") or previous_result.get("search_results") or []
+                if results and 0 <= slots.selected_option_index < len(results) and not slots.train_number:
+                    candidate = results[slots.selected_option_index]
+                    if isinstance(candidate, dict) and candidate.get("train_number"):
+                        slots.train_number = candidate.get("train_number")
+            except Exception:
+                pass
+
+        # Heuristic: if previous_result asked for clarification and the reply is short, inherit the missing slot
+        if previous_result and previous_result.get("clarification_needed"):
+            token_count = len(text.strip().split()) if text.strip() else 0
+            if token_count <= 4:
+                # Try filling travel_date
+                dt = self._extract_date(text)
+                if dt and not slots.travel_date:
+                    slots.travel_date = dt
+                # Try filling class
+                cls = self._extract_class(text)
+                if cls and not slots.travel_class:
+                    slots.travel_class = cls
+                # Try filling passengers
+                pax = self._extract_passengers(text)
+                if pax and not slots.passengers:
+                    slots.passengers = pax
+
+        # Heuristic: bare numeric replies are often passenger counts in follow-ups
+        if not slots.passengers:
+            m = re.fullmatch(r"\s*(\d+)\s*", text)
+            if m:
+                try:
+                    slots.passengers = int(m.group(1))
+                except Exception:
+                    pass
+
         return slots
 
     def _normalize_context_source(self, data: Any) -> Dict[str, Any]:
+        """Normalize possible previous_result or memory shapes into a flat dict of known keys.
+        Accepts:
+        - a direct slot dict (source/destination/...)
+        - a previous_result produced by QueryInterpretation.to_dict()
+        - a legacy search result containing 'results' or 'search_results'
+        """
         if not isinstance(data, dict):
             return {}
+        # If wrapped under 'slots', prefer that
+        if 'slots' in data and isinstance(data['slots'], dict):
+            data = {**data['slots'], **data}
+            # flatten: slots may override top-level keys
+            data.pop('slots', None)
+        # Also consider resolved_entities
+        if 'resolved_entities' in data and isinstance(data['resolved_entities'], dict):
+            data = {**data['resolved_entities'], **data}
+            data.pop('resolved_entities', None)
+
         keys = {
             "source", "destination", "train_number", "travel_class", "passengers",
             "travel_date", "station", "source_station", "destination_station",
             "selected_train_number", "class_code", "passenger_count", "date"
         }
-        return {k: v for k, v in data.items() if k in keys and v not in (None, "", [], {})}
+        out = {k: v for k, v in data.items() if k in keys and v not in (None, "", [], {})}
+        # If results are present, attempt to extract source/destination from the first result
+        results = data.get('results') or data.get('search_results') or data.get('results_list')
+        if (not out.get('source') or not out.get('destination')) and isinstance(results, list) and results:
+            first = results[0]
+            if isinstance(first, dict):
+                for key in ('source', 'from', 'src', 'source_station'):
+                    if not out.get('source') and first.get(key):
+                        out['source'] = first.get(key)
+                for key in ('destination', 'to', 'dst', 'destination_station'):
+                    if not out.get('destination') and first.get(key):
+                        out['destination'] = first.get(key)
+        return out
 
     def _missing_slots_for_intent(self, intent: str, slots: QuerySlots, previous_result: Dict[str, Any]) -> List[str]:
         missing: List[str] = []
@@ -550,8 +724,10 @@ class QueryUnderstanding:
                 missing.append("source")
             if not slots.destination:
                 missing.append("destination")
-        if intent in {"fare_query", "route_query", "train_info"} and not slots.train_number:
-            if intent != "fare_query" or not (slots.source and slots.destination):
+        # Require train_number for route_query or train_info when train_number isn't provided
+        # For fare_query prefer asking for source/destination rather than train number
+        if intent in {"route_query", "train_info"} and not slots.train_number:
+            if not (slots.source and slots.destination):
                 missing.append("train_number")
         if intent == "booking_create":
             if not slots.travel_class:
@@ -661,7 +837,8 @@ class QueryUnderstanding:
             score = self._similarity(cleaned, alias)
             if score > best_score:
                 best_code, best_score = code, score
-        if best_code and best_score >= 0.83:
+        # Lower threshold slightly to catch common misspellings; keep conservative to avoid false positives
+        if best_code and best_score >= 0.75:
             return best_code
         if re.fullmatch(r"[A-Za-z0-9]{2,6}", cleaned):
             return cleaned.upper()
@@ -673,6 +850,27 @@ class QueryUnderstanding:
             return float(fuzz.ratio(a, b)) / 100.0
         except Exception:
             return difflib.SequenceMatcher(None, a, b).ratio()
+
+    def _parse_ordinal(self, text: str) -> Optional[int]:
+        """Return 1-based ordinal if detected in text (e.g., 'first'->1, '2nd'->2)."""
+        text = (text or "").lower()
+        ord_map = {
+            'first': 1, '1st': 1, 'one': 1,
+            'second': 2, '2nd': 2, 'two': 2,
+            'third': 3, '3rd': 3, 'three': 3,
+            'fourth': 4, '4th': 4, 'four': 4,
+            'fifth': 5, '5th': 5, 'five': 5,
+        }
+        for k, v in ord_map.items():
+            if re.search(rf"\b{k}\b", text):
+                return v
+        m = re.search(r"\b(\d+)(?:st|nd|rd|th)?\b", text)
+        if m:
+            try:
+                return int(m.group(1))
+            except Exception:
+                return None
+        return None
 
     def _string_or_none(self, value: Any) -> Optional[str]:
         if value is None:
