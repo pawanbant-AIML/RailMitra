@@ -1,43 +1,31 @@
 """
-fare_calculator.py – Realistic Indian Railways fare estimation engine.
+fare_calculator.py — Fare estimation engine for RailMitra.
 
-Design:
-  - Per-km base rates for each class, calibrated to approximate real IRCTC fares.
-  - Train category multipliers (Rajdhani/Shatabdi are premium; Express is standard).
-  - Minimum fare floors to avoid unrealistically tiny amounts.
-  - Graceful fallback when distance is unknown (uses route-average distances per class).
-
-Class codes used across the system:
-  GN  – General / Unreserved
-  SL  – Sleeper Class
-  3A  – AC 3-Tier
-  2A  – AC 2-Tier
-  1A  – AC First Class
-  CC  – Chair Car (day trains)
-  EC  – Executive Chair Car
-  2S  – Second Sitting
+This file is designed to be resilient when route distance is missing in the
+Datameet dataset:
+- use live route distance if available
+- otherwise fall back to corridor distance
+- otherwise use a safe default distance
+- return a structured breakdown plus a markdown table helper
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Any, Dict, Iterable, Optional, Sequence
 
-# ---------------------------------------------------------------------------
-# Per-km base fares (₹ / km), calibrated for ~300–700 km corridors
-# ---------------------------------------------------------------------------
+
 BASE_RATE_PER_KM: Dict[str, float] = {
-    "GN": 0.45,   # General – cheapest
-    "2S": 0.50,   # Second Sitting
-    "SL": 0.95,   # Sleeper – most popular
-    "CC": 1.80,   # Chair Car (AC day train)
-    "3A": 2.40,   # AC 3-Tier
-    "2A": 3.60,   # AC 2-Tier
-    "1A": 6.00,   # AC 1st Class
-    "EC": 3.20,   # Executive Chair Car
+    "GN": 0.45,
+    "2S": 0.50,
+    "SL": 0.95,
+    "CC": 1.80,
+    "3A": 2.40,
+    "2A": 3.60,
+    "1A": 6.00,
+    "EC": 3.20,
 }
 
-# Minimum fare per class (₹) – even short journeys must charge at least this
 MIN_FARE: Dict[str, float] = {
     "GN": 30,
     "2S": 35,
@@ -49,26 +37,46 @@ MIN_FARE: Dict[str, float] = {
     "EC": 400,
 }
 
-# Train-name keyword → multiplier (applied on top of base rate)
-# Rajdhani/Shatabdi charge a premium; Passenger trains are cheaper.
+CLASS_DISPLAY_NAMES: Dict[str, str] = {
+    "GN": "General / Unreserved",
+    "2S": "Second Sitting",
+    "SL": "Sleeper Class",
+    "CC": "AC Chair Car",
+    "3A": "AC 3-Tier",
+    "2A": "AC 2-Tier",
+    "1A": "AC First Class",
+    "EC": "Executive Chair Car",
+}
+
 TRAIN_CATEGORY_MULTIPLIERS: Dict[str, float] = {
-    "rajdhani": 1.45,
-    "shatabdi": 1.35,
-    "duronto": 1.40,
     "vande bharat": 1.50,
     "tejas": 1.50,
+    "rajdhani": 1.45,
+    "duronto": 1.40,
+    "shatabdi": 1.35,
     "humsafar": 1.30,
+    "superfast": 1.10,
+    "intercity": 1.10,
+    "express": 1.00,
+    "mail": 0.95,
     "garib rath": 0.90,
     "passenger": 0.65,
     "local": 0.55,
-    "express": 1.00,
-    "superfast": 1.10,
-    "mail": 0.95,
-    "intercity": 1.10,
 }
 
-# Fallback distances (km) used when route data is unavailable
-# Keyed by (source_code, destination_code) pairs – major corridors only
+SERVICE_CHARGES: Dict[str, int] = {
+    "GN": 5,
+    "2S": 10,
+    "SL": 20,
+    "CC": 25,
+    "3A": 30,
+    "2A": 35,
+    "1A": 50,
+    "EC": 40,
+}
+
+ROUND_TO = 5
+
 CORRIDOR_DISTANCES: Dict[tuple, int] = {
     ("SBC", "MAQ"): 352,
     ("MAQ", "SBC"): 352,
@@ -92,21 +100,19 @@ CORRIDOR_DISTANCES: Dict[tuple, int] = {
     ("CSMT", "NDLS"): 1386,
     ("MAS", "HWH"): 1662,
     ("HWH", "MAS"): 1662,
-    ("SBC", "GOA"): 580,
-    ("GOA", "SBC"): 580,
     ("MAQ", "MAS"): 713,
     ("MAS", "MAQ"): 713,
     ("MYS", "MAS"): 488,
     ("MAS", "MYS"): 488,
+    ("SBC", "GOA"): 580,
+    ("GOA", "SBC"): 580,
 }
 
-# Default average distance used when nothing else is available
 DEFAULT_DISTANCE_KM = 350
 
 
 @dataclass
 class FareBreakdown:
-    """Structured output for a single class fare calculation."""
     class_code: str
     class_name: str
     distance_km: int
@@ -116,59 +122,94 @@ class FareBreakdown:
     per_passenger: float
     passengers: int
     total_fare: float
-    is_estimated: bool  # True when distance was not from DB
-
-
-CLASS_DISPLAY_NAMES: Dict[str, str] = {
-    "GN": "General / Unreserved",
-    "2S": "Second Sitting",
-    "SL": "Sleeper Class",
-    "CC": "AC Chair Car",
-    "3A": "AC 3-Tier",
-    "2A": "AC 2-Tier",
-    "1A": "AC First Class",
-    "EC": "Executive Chair Car",
-}
+    is_estimated: bool
+    components: Dict[str, float]
 
 
 class FareCalculator:
-    """
-    Calculates realistic per-km fare estimates for Indian Railways.
-
-    Usage:
-        calc = FareCalculator()
-        breakdown = calc.calculate(
-            travel_class="SL",
-            distance_km=352,
-            train_name="Karnataka Express",
-            passengers=2
-        )
-        print(breakdown.total_fare)  # e.g. ₹686
-    """
+    def _normalise_class(self, travel_class: Optional[str]) -> str:
+        if not travel_class:
+            return "SL"
+        value = str(travel_class).strip().lower()
+        if value == "all":
+            return "ALL"
+        mapping = {
+            "sleeper": "SL",
+            "sl": "SL",
+            "general": "GN",
+            "gn": "GN",
+            "unreserved": "GN",
+            "2s": "2S",
+            "second sitting": "2S",
+            "3ac": "3A",
+            "3a": "3A",
+            "third ac": "3A",
+            "2ac": "2A",
+            "2a": "2A",
+            "second ac": "2A",
+            "1ac": "1A",
+            "1a": "1A",
+            "first ac": "1A",
+            "cc": "CC",
+            "chair car": "CC",
+            "ec": "EC",
+            "executive": "EC",
+        }
+        return mapping.get(value, value.upper())
 
     def _get_train_multiplier(self, train_name: Optional[str]) -> float:
-        """Returns the multiplier for the train category based on its name."""
         if not train_name:
             return 1.0
-        lower = train_name.lower()
+        lowered = str(train_name).lower()
         for keyword, mult in TRAIN_CATEGORY_MULTIPLIERS.items():
-            if keyword in lower:
+            if keyword in lowered:
                 return mult
         return 1.0
 
-    def _normalise_class(self, travel_class: str) -> str:
-        """Normalise incoming class string to a known code."""
-        mapping = {
-            "sleeper": "SL", "sl": "SL",
-            "general": "GN", "gn": "GN", "unreserved": "GN",
-            "3ac": "3A", "3a": "3A", "third ac": "3A",
-            "2ac": "2A", "2a": "2A", "second ac": "2A",
-            "1ac": "1A", "1a": "1A", "first ac": "1A",
-            "cc": "CC", "chair car": "CC", "ac chair": "CC",
-            "ec": "EC", "executive": "EC",
-            "2s": "2S", "second sitting": "2S",
+    def _coerce_distance(self, distance_km: Optional[int], source_code: Optional[str], dest_code: Optional[str]) -> tuple[int, bool]:
+        if isinstance(distance_km, (int, float)) and distance_km > 0:
+            return int(round(distance_km)), False
+        if source_code and dest_code:
+            key = (str(source_code).upper(), str(dest_code).upper())
+            if key in CORRIDOR_DISTANCES:
+                return CORRIDOR_DISTANCES[key], True
+        return DEFAULT_DISTANCE_KM, True
+
+    def _round_rupees(self, value: float) -> int:
+        if value <= 0:
+            return 0
+        return int(round(value / ROUND_TO) * ROUND_TO)
+
+    def _fare_components(
+        self,
+        class_code: str,
+        distance_km: int,
+        train_name: Optional[str],
+        passengers: int,
+    ) -> Dict[str, float]:
+        rate = BASE_RATE_PER_KM.get(class_code, BASE_RATE_PER_KM["SL"])
+        train_mult = self._get_train_multiplier(train_name)
+        service = SERVICE_CHARGES.get(class_code, 20)
+        reservation = 0.0 if class_code in {"GN", "2S"} else (12 if class_code == "SL" else 20)
+
+        base = float(distance_km) * rate
+        premium = base * (train_mult - 1.0) if train_mult > 1 else 0.0
+        subtotal = base + premium + service + reservation
+        minimum = MIN_FARE.get(class_code, 100)
+        final = max(subtotal, minimum)
+
+        return {
+            "rate_per_km": rate,
+            "train_multiplier": train_mult,
+            "service_charge": float(service),
+            "reservation_charge": float(reservation),
+            "base_amount": base,
+            "premium_amount": premium,
+            "subtotal": subtotal,
+            "minimum_fare": float(minimum),
+            "per_passenger": float(self._round_rupees(final)),
+            "total": float(self._round_rupees(final) * max(passengers, 1)),
         }
-        return mapping.get(travel_class.lower().strip(), travel_class.upper().strip())
 
     def calculate(
         self,
@@ -179,51 +220,29 @@ class FareCalculator:
         source_code: Optional[str] = None,
         dest_code: Optional[str] = None,
     ) -> FareBreakdown:
-        """
-        Calculate fare for a single class and return a FareBreakdown.
-
-        Priority for distance:
-          1. distance_km argument (from DB route data)
-          2. CORRIDOR_DISTANCES lookup by station codes
-          3. DEFAULT_DISTANCE_KM fallback
-        """
         class_code = self._normalise_class(travel_class)
-        is_estimated = False
+        if class_code == "ALL":
+            class_code = "SL"
 
-        # --- Resolve distance ---
-        if distance_km and distance_km > 0:
-            dist = distance_km
-        elif source_code and dest_code:
-            key = (source_code.upper(), dest_code.upper())
-            dist = CORRIDOR_DISTANCES.get(key, 0)
-            if dist == 0:
-                dist = DEFAULT_DISTANCE_KM
-                is_estimated = True
-            else:
-                is_estimated = True  # Still an estimate (not from live DB)
-        else:
-            dist = DEFAULT_DISTANCE_KM
-            is_estimated = True
+        distance, estimated = self._coerce_distance(distance_km, source_code, dest_code)
+        passengers = max(1, int(passengers or 1))
+        components = self._fare_components(class_code, distance, train_name, passengers)
 
-        rate = BASE_RATE_PER_KM.get(class_code, BASE_RATE_PER_KM["SL"])
-        multiplier = self._get_train_multiplier(train_name)
-        raw_fare = dist * rate * multiplier
-        floored = max(raw_fare, MIN_FARE.get(class_code, 100))
-        # Round to nearest ₹5 for a realistic look
-        final = round(floored / 5) * 5
-        total = final * max(passengers, 1)
+        per_passenger = components["per_passenger"]
+        total_fare = components["total"]
 
         return FareBreakdown(
             class_code=class_code,
             class_name=CLASS_DISPLAY_NAMES.get(class_code, class_code),
-            distance_km=dist,
-            base_fare=round(raw_fare, 2),
-            multiplier=multiplier,
-            final_fare=final,
-            per_passenger=final,
-            passengers=max(passengers, 1),
-            total_fare=total,
-            is_estimated=is_estimated,
+            distance_km=distance,
+            base_fare=round(components["base_amount"], 2),
+            multiplier=round(components["train_multiplier"], 2),
+            final_fare=per_passenger,
+            per_passenger=per_passenger,
+            passengers=passengers,
+            total_fare=total_fare,
+            is_estimated=estimated,
+            components=components,
         )
 
     def calculate_all_classes(
@@ -233,24 +252,37 @@ class FareCalculator:
         passengers: int = 1,
         source_code: Optional[str] = None,
         dest_code: Optional[str] = None,
-        available_classes: Optional[list] = None,
+        available_classes: Optional[Sequence[str]] = None,
     ) -> Dict[str, FareBreakdown]:
-        """
-        Calculate fare for every class (or a specified subset).
-        Returns a dict keyed by class code.
-        """
-        classes = available_classes or list(BASE_RATE_PER_KM.keys())
-        result = {}
+        classes = list(available_classes) if available_classes else list(BASE_RATE_PER_KM.keys())
+        output: Dict[str, FareBreakdown] = {}
         for cls in classes:
-            result[cls] = self.calculate(
-                travel_class=cls,
+            normalized = self._normalise_class(cls)
+            if normalized == "ALL":
+                continue
+            output[normalized] = self.calculate(
+                travel_class=normalized,
                 distance_km=distance_km,
                 train_name=train_name,
                 passengers=passengers,
                 source_code=source_code,
                 dest_code=dest_code,
             )
-        return result
+        return output
+
+    def estimate_demo_fare(
+        self,
+        distance_km: float,
+        class_code: str,
+        train_category_multiplier: float = 1.0,
+        passengers: int = 1,
+    ) -> int:
+        normalized = self._normalise_class(class_code)
+        distance = max(1, int(round(distance_km)))
+        rate = BASE_RATE_PER_KM.get(normalized, BASE_RATE_PER_KM["SL"])
+        base = distance * rate * max(0.75, float(train_category_multiplier))
+        final = max(base + SERVICE_CHARGES.get(normalized, 20), MIN_FARE.get(normalized, 100))
+        return self._round_rupees(final) * max(1, int(passengers or 1))
 
     def format_fare_table(
         self,
@@ -261,24 +293,28 @@ class FareCalculator:
         fares: Dict[str, FareBreakdown],
         passengers: int = 1,
     ) -> str:
-        """Render a clean markdown fare table for the chat interface."""
         lines = [
             f"💰 **Fare Estimates — {source} → {destination}**",
             f"🚆 Train: **{train_number}** ({train_name})",
             f"👥 Passengers: **{passengers}**",
             "",
             "| Class | Per Ticket | Total |",
-            "|-------|-----------|-------|",
+            "|-------|-----------:|------:|",
         ]
         order = ["GN", "2S", "SL", "CC", "3A", "2A", "1A", "EC"]
         for cls in order:
             if cls in fares:
                 f = fares[cls]
-                lines.append(
-                    f"| {f.class_name} | ₹{f.per_passenger:,.0f} | ₹{f.total_fare:,.0f} |"
-                )
+                lines.append(f"| {f.class_name} | ₹{f.per_passenger:,.0f} | ₹{f.total_fare:,.0f} |")
         if fares:
             sample = next(iter(fares.values()))
-            note = "~estimated" if sample.is_estimated else "distance from route data"
+            note = "estimated" if sample.is_estimated else "route-based"
             lines.append(f"\n_Fares are approximate ({note}, {sample.distance_km} km)._")
         return "\n".join(lines)
+
+    def summarize_breakdown(self, breakdown: FareBreakdown) -> str:
+        return (
+            f"{breakdown.class_name}: ₹{breakdown.per_passenger:,.0f} per passenger, "
+            f"₹{breakdown.total_fare:,.0f} total for {breakdown.passengers} pax "
+            f"({breakdown.distance_km} km, {'estimated' if breakdown.is_estimated else 'route-based'})."
+        )
