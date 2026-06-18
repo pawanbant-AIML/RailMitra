@@ -1,0 +1,46 @@
+2026-06-18 15:36:30.480 | INFO     | app.agent.agent_service:run:159 - [agent] incoming=%r
+2026-06-18 15:36:30.480 | ERROR    | app.agent.agent_service:_run_tool_agent:1219 - [agent] Unexpected error in _run_tool_agent: %s
+Traceback (most recent call last):
+
+  File "c:\Rail\RailMitra\backend\diagnose.py", line 173, in <module>
+    test_agent_service(engine)
+    │                  └ Engine(postgresql://railmitra_jvr9_user:***@dpg-d8heu342m8qs73b2v1cg-a.oregon-postgres.render.com/railmitra_jvr9)
+    └ <function test_agent_service at 0x00000265E3ECE020>
+
+  File "c:\Rail\RailMitra\backend\diagnose.py", line 157, in test_agent_service
+    response = agent.run(user_message, history, db, session_id="test")
+               │     │   │             │        └ <sqlalchemy.orm.session.Session object at 0x00000265E30497D0>
+               │     │   │             └ []
+               │     │   └ 'Fare from Kolkata to Varanasi'
+               │     └ <function AgentService.run at 0x00000265E3EA3F60>
+               └ <app.agent.agent_service.AgentService object at 0x00000265E3D22310>
+
+  File "c:\Rail\RailMitra\backend\app\agent\agent_service.py", line 177, in run
+    llm_answer = self._run_tool_agent(
+                 │    └ <function AgentService._run_tool_agent at 0x00000265E3ECDB20>
+                 └ <app.agent.agent_service.AgentService object at 0x00000265E3D22310>
+
+> File "c:\Rail\RailMitra\backend\app\agent\agent_service.py", line 1105, in _run_tool_agent
+    tool_objects = tools.build()
+                   │     └ <function AgentTools.build at 0x00000265E3EA02C0>
+                   └ <app.agent.tools.AgentTools object at 0x00000265E3F4B850>
+
+  File "c:\Rail\RailMitra\backend\app\agent\tools.py", line 544, in build
+    @tool
+     └ <function tool at 0x00000265E3600B80>
+
+  File "C:\Rail\RailMitra\trainvenv\Lib\site-packages\langchain_core\tools.py", line 961, in tool
+    return _make_with_name(args[0].__name__)(args[0])
+           │               │                 └ (<function AgentTools.build.<locals>.search_trains at 0x00000265E3EEC2C0>,)
+           │               └ (<function AgentTools.build.<locals>.search_trains at 0x00000265E3EEC2C0>,)
+           └ <function tool.<locals>._make_with_name at 0x00000265E3F9CF40>
+  File "C:\Rail\RailMitra\trainvenv\Lib\site-packages\langchain_core\tools.py", line 926, in _make_tool
+    return StructuredTool.from_function(
+           │              └ <classmethod(<function StructuredTool.from_function at 0x00000265E3DAD4E0>)>
+           └ <class 'langchain_core.tools.StructuredTool'>
+  File "C:\Rail\RailMitra\trainvenv\Lib\site-packages\langchain_core\tools.py", line 831, in from_function
+    raise ValueError(
+
+ValueError: Function must have a docstring if description not provided.
+2026-06-18 15:36:31.374 | INFO     | app.agent.tools:search_trains:222 - [tool:search_trains] %s → %s date=%s after=%s before=%s hint=%s
+2026-06-18 15:36:53.085 | INFO     | app.agent.tools:get_fare:275 - [tool:get_fare] %s %s→%s dist=%s class=%s pax=%s

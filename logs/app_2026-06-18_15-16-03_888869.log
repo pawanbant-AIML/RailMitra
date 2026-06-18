@@ -1,0 +1,2 @@
+2026-06-18 15:16:25.123 | INFO     | app.agent.agent_service:run:128 - [agent] incoming=%r
+2026-06-18 15:16:25.889 | INFO     | app.agent.tools:search_trains:206 - [tool:search_trains] %s → %s date=%s after=%s before=%s hint=%s
