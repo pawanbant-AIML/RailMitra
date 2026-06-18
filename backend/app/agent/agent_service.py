@@ -604,6 +604,7 @@ class AgentService:
             travel_class=parsed.travel_class,
             passengers=parsed.passengers or 1,
             limit=parsed.limit or 10,
+            budget_max=parsed.budget_max,
         )
         payload: List[Dict[str, Any]] = []
         for item in ranked:

@@ -1,7 +1,8 @@
 """
 recommendation_engine.py — train ranking and recommendation logic.
 
-Supports cheapest / fastest / best-balance / overnight style ranking.
+Supports cheapest / fastest / best-balance / overnight style ranking,
+with optional filters for budget and travel class availability.
 """
 
 from __future__ import annotations
@@ -110,7 +111,9 @@ class RecommendationEngine:
             source_code=source,
             dest_code=destination,
         )
-        return float(breakdown.total_fare)
+        # If the fare is 0 or negative, treat as unavailable (class not supported)
+        total = float(breakdown.total_fare)
+        return total if total > 0 else None
 
     def rank(
         self,
@@ -126,6 +129,7 @@ class RecommendationEngine:
         travel_class: Optional[str] = None,
         passengers: int = 1,
         limit: int = 10,
+        budget_max: Optional[int] = None,   # NEW
     ) -> List[Recommendation]:
         candidates: List[Recommendation] = []
         for train in trains or []:
@@ -133,6 +137,16 @@ class RecommendationEngine:
             stops = self._stop_count(train)
             dep = self._departure_minutes(train)
             fare_est = self._fare_for_train(train, source, destination, travel_class or "SL", passengers)
+
+            # --- NEW FILTERS ---
+            # 1. Class filtering: if class specified and fare unavailable (class not offered), skip
+            if travel_class and fare_est is None:
+                continue
+            # 2. Budget filtering: skip if fare exceeds budget_max
+            if budget_max is not None and fare_est is not None and fare_est > budget_max:
+                continue
+            # --------------------
+
             score = 100.0
             reasons: List[str] = []
 
