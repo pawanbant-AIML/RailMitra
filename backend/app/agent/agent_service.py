@@ -155,108 +155,8 @@ class AgentService:
         self._remember_last_turn(session_id, user_message, answer)
         return answer
 
-    # ============ NEW: LLM agent methods ============
-    def _run_tool_agent(
-        self,
-        user_message: str,
-        conversation_history: List[Dict[str, str]],
-        context: ConversationContext,
-        tools: AgentTools,
-    ) -> Optional[str]:
-        try:
-            tool_list = tools.build()
-            messages = self._build_messages(user_message, conversation_history, context)
-            tool_schemas = self._build_tool_schemas(tool_list)
-            tool_map = self._build_tool_map(tool_list)
+    # ---------------- memory helpers ----------------
 
-            for _ in range(self.max_tool_iterations):
-                llm_message = self._call_llm(messages, tool_schemas)
-                if not llm_message:
-                    return None
-
-                content = (llm_message.get("content") or "")
-                tool_calls = llm_message.get("tool_calls") or []
-                if not tool_calls:
-                    final = self._sanitize_output(content)
-                    return final or None
-
-                messages.append({"role": "assistant", "content": content, "tool_calls": tool_calls})
-
-                for tc in tool_calls:
-                    tool_name = tc.get("function", {}).get("name", "")
-                    raw_args = tc.get("function", {}).get("arguments", "{}")
-                    tc_id = tc.get("id", f"call_{tool_name}")
-                    parsed_args = self._safe_json_loads(raw_args)
-
-                    if tool_name not in tool_map:
-                        tool_result = {"status": "error", "message": f"Unknown tool: {tool_name}"}
-                    else:
-                        try:
-                            tool_result = self._invoke_tool(tool_map[tool_name], parsed_args)
-                        except Exception as exc:
-                            logger.exception("[agent] tool failed: %s", tool_name)
-                            tool_result = {"status": "error", "message": f"Tool {tool_name} failed: {exc}"}
-
-                    messages.append(
-                        {
-                            "role": "tool",
-                            "tool_call_id": tc_id,
-                            "content": json.dumps(tool_result, ensure_ascii=False),
-                        }
-                    )
-
-            return None
-        except Exception as exc:
-            logger.exception("[agent] tool agent failure: %s", exc)
-            return None
-
-    def _call_llm(
-        self,
-        messages: List[Dict[str, Any]],
-        tools: List[Dict[str, Any]],
-    ) -> Optional[Dict[str, Any]]:
-        payload = {
-            "model": HF_MODEL_NAME,
-            "messages": messages,
-            "tools": tools,
-            "tool_choice": "auto",
-            "max_tokens": self.max_output_tokens,
-            "temperature": self.temperature,
-            "stream": False,
-        }
-        headers = {
-            "Authorization": f"Bearer {self.hf_token}",
-            "Content-Type": "application/json",
-        }
-
-        for attempt in range(self.retries + 1):
-            try:
-                resp = requests.post(HF_API_URL, headers=headers, json=payload, timeout=self.timeout)
-                if resp.status_code == 200:
-                    data = resp.json()
-                    choice = (data.get("choices") or [{}])[0]
-                    message = choice.get("message") or {}
-                    # 🔥 Fix: ensure role is present
-                    if "role" not in message:
-                        message["role"] = "assistant"
-                    return message
-                if resp.status_code == 429:
-                    time.sleep(min(8, 2 * (attempt + 1)))
-                    continue
-                if resp.status_code in (500, 502, 503, 504):
-                    time.sleep(min(4, attempt + 1))
-                    continue
-                logger.error("[agent] hf error status=%d body=%s", resp.status_code, resp.text[:400])
-                return None
-            except requests.Timeout:
-                if attempt >= self.retries:
-                    return None
-            except Exception as exc:
-                logger.exception("[agent] hf request exception: %s", exc)
-                return None
-        return None
-
-    # ============ Memory methods (unchanged) ============
     def _get_or_create_memory(self, session_id: str, user_id: Optional[int]) -> Any:
         store = self.session_store
         if hasattr(store, "get_or_create"):
@@ -298,68 +198,6 @@ class AgentService:
                 if isinstance(val, dict):
                     return val
         return {}
-
-    def _build_context(self, conversation_history: List[Dict[str, Any]], interpretation: QueryInterpretation, memory: Any) -> ConversationContext:
-        """Build ConversationContext from interpretation slots and session memory.
-
-        Preference order: explicit slots from interpretation -> memory values -> resolved entities.
-        """
-        slots = interpretation.slots
-
-        def mem(attr: str):
-            try:
-                return getattr(memory, attr)
-            except Exception:
-                return None
-
-        ctx = ConversationContext(
-            source=slots.source or mem("source") or (interpretation.resolved_entities or {}).get("source"),
-            destination=slots.destination or mem("destination") or (interpretation.resolved_entities or {}).get("destination"),
-            train_number=slots.train_number or mem("train_number"),
-            travel_class=slots.travel_class or mem("travel_class"),
-            passengers=slots.passengers or mem("passengers"),
-            travel_date=slots.travel_date or mem("travel_date"),
-            time_hint=slots.time_hint or mem("time_hint"),
-            departure_after=slots.departure_after or mem("departure_after"),
-            departure_before=slots.departure_before or mem("departure_before"),
-            sort_by=slots.sort_by or mem("sort_by"),
-            limit=slots.limit or mem("limit"),
-            booking_id=slots.booking_id or mem("booking_id"),
-            station=slots.station or mem("station"),
-            preference=slots.preference or mem("preference"),
-            intent=interpretation.intent,
-            budget_max=slots.budget_max or mem("budget_max"),
-            selected_option_index=slots.selected_option_index or mem("selected_option_index"),
-        )
-
-        return ctx
-
-    def _parsed_from_interpretation(self, interpretation: QueryInterpretation, memory: Any, raw_text: str) -> ParsedRequest:
-        """Convert QueryInterpretation + memory into a ParsedRequest used by handlers."""
-        slots = interpretation.slots
-        parsed = ParsedRequest(
-            intent=interpretation.intent,
-            source=slots.source or (getattr(memory, "source", None) if memory else None),
-            destination=slots.destination or (getattr(memory, "destination", None) if memory else None),
-            train_number=slots.train_number or (getattr(memory, "train_number", None) if memory else None),
-            travel_class=slots.travel_class or (getattr(memory, "travel_class", None) if memory else None),
-            passengers=slots.passengers or (getattr(memory, "passengers", None) if memory else None),
-            travel_date=slots.travel_date or (getattr(memory, "travel_date", None) if memory else None),
-            time_hint=slots.time_hint or (getattr(memory, "time_hint", None) if memory else None),
-            departure_after=slots.departure_after or (getattr(memory, "departure_after", None) if memory else None),
-            departure_before=slots.departure_before or (getattr(memory, "departure_before", None) if memory else None),
-            sort_by=slots.sort_by or (getattr(memory, "sort_by", None) if memory else None),
-            limit=slots.limit or (getattr(memory, "limit", None) if memory else None),
-            booking_id=slots.booking_id or (getattr(memory, "booking_id", None) if memory else None),
-            station=slots.station or (getattr(memory, "station", None) if memory else None),
-            preference=slots.preference or (getattr(memory, "preference", None) if memory else None),
-            budget_max=slots.budget_max or (getattr(memory, "budget_max", None) if memory else None),
-            selected_option_index=slots.selected_option_index or (getattr(memory, "selected_option_index", None) if memory else None),
-            raw=raw_text,
-        )
-        # direct_only derived from sub-intents
-        parsed.direct_only = bool("direct_only" in getattr(interpretation, "sub_intents", []))
-        return parsed
 
     def _update_memory_from_interpretation(self, session_id: str, interpretation: QueryInterpretation, memory: Any) -> None:
         s = interpretation.slots
@@ -455,6 +293,65 @@ class AgentService:
                 self.session_store.update(session_id, **payload)
         except Exception as exc:
             logger.warning("[agent] remember-selected failed: %s", exc)
+
+    def _build_context(self, conversation_history: List[Dict[str, str]], interpretation: QueryInterpretation, memory: Any) -> ConversationContext:
+        """Assemble ConversationContext from interpretation and session memory."""
+        slots = getattr(interpretation, "slots", None) or None
+        def mem_attr(name: str):
+            try:
+                return getattr(memory, name)
+            except Exception:
+                return None
+        return ConversationContext(
+            source = getattr(slots, 'source', None) or mem_attr('source'),
+            destination = getattr(slots, 'destination', None) or mem_attr('destination'),
+            train_number = getattr(slots, 'train_number', None) or mem_attr('train_number'),
+            travel_class = getattr(slots, 'travel_class', None) or mem_attr('travel_class'),
+            passengers = getattr(slots, 'passengers', None) or mem_attr('passengers'),
+            travel_date = getattr(slots, 'travel_date', None) or mem_attr('travel_date'),
+            time_hint = getattr(slots, 'time_hint', None) or mem_attr('time_hint'),
+            departure_after = getattr(slots, 'departure_after', None) or mem_attr('departure_after'),
+            departure_before = getattr(slots, 'departure_before', None) or mem_attr('departure_before'),
+            sort_by = getattr(slots, 'sort_by', None) or mem_attr('sort_by'),
+            limit = getattr(slots, 'limit', None) or mem_attr('limit'),
+            booking_id = getattr(slots, 'booking_id', None) or mem_attr('booking_id'),
+            station = getattr(slots, 'station', None) or mem_attr('station'),
+            preference = getattr(slots, 'preference', None) or mem_attr('preference'),
+            intent = getattr(interpretation, 'intent', None),
+            budget_max = getattr(slots, 'budget_max', None) or mem_attr('budget_max'),
+            selected_option_index = getattr(slots, 'selected_option_index', None) or mem_attr('selected_option_index'),
+        )
+
+    def _parsed_from_interpretation(self, interpretation: QueryInterpretation, memory: Any, raw_text: str) -> ParsedRequest:
+        """Convert QueryInterpretation + memory into ParsedRequest for handlers."""
+        slots = getattr(interpretation, "slots", None)
+        mem = self._memory_to_dict(memory)
+        direct_only = False
+        try:
+            direct_only = "direct_only" in (interpretation.sub_intents or [])
+        except Exception:
+            direct_only = False
+        return ParsedRequest(
+            intent=getattr(interpretation, "intent", "train_search"),
+            source=getattr(slots, "source", None) or mem.get("source"),
+            destination=getattr(slots, "destination", None) or mem.get("destination"),
+            train_number=getattr(slots, "train_number", None) or mem.get("train_number"),
+            travel_class=getattr(slots, "travel_class", None) or mem.get("travel_class"),
+            passengers=getattr(slots, "passengers", None) or mem.get("passengers"),
+            travel_date=getattr(slots, "travel_date", None) or mem.get("travel_date"),
+            time_hint=getattr(slots, "time_hint", None) or mem.get("time_hint"),
+            departure_after=getattr(slots, "departure_after", None) or mem.get("departure_after"),
+            departure_before=getattr(slots, "departure_before", None) or mem.get("departure_before"),
+            sort_by=getattr(slots, "sort_by", None) or mem.get("sort_by"),
+            limit=getattr(slots, "limit", None) or mem.get("limit"),
+            booking_id=getattr(slots, "booking_id", None) or mem.get("booking_id"),
+            station=getattr(slots, "station", None) or mem.get("station"),
+            preference=getattr(slots, "preference", None) or mem.get("preference"),
+            budget_max=getattr(slots, "budget_max", None) or mem.get("budget_max"),
+            direct_only=bool(direct_only),
+            selected_option_index=getattr(slots, "selected_option_index", None) or mem.get("selected_option_index"),
+            raw=raw_text or getattr(interpretation, "raw_text", ""),
+        )
 
     # ---------------- local handling ----------------
 
