@@ -85,6 +85,7 @@ Examples:
 - User: "book 2 sleeper tickets from Delhi to Chennai tomorrow" → {"tool": "book_ticket", "args": {"source": "Delhi", "destination": "Chennai", "travel_class": "SL", "passengers": 2, "date": "2026-06-20"}}
 """
 
+
 @dataclass
 class ConversationContext:
     source: Optional[str] = None
@@ -104,6 +105,7 @@ class ConversationContext:
     intent: Optional[str] = None
     budget_max: Optional[int] = None
     selected_option_index: Optional[int] = None
+
 
 @dataclass
 class ParsedRequest:
@@ -193,7 +195,7 @@ class AgentService:
         return answer
 
     # ---------- Memory helpers ----------
-    # (These are unchanged; refer to the previous versions)
+    # (Unchanged – keep as previous version)
     def _get_or_create_memory(self, session_id: str, user_id: Optional[int]) -> Any:
         store = self.session_store
         if hasattr(store, "get_or_create"):
@@ -590,7 +592,10 @@ class AgentService:
     def _handle_booking_query(self, parsed: ParsedRequest, tools: AgentTools, context: ConversationContext, session_id: str, memory: Any) -> Optional[str]:
         src = parsed.source or context.source
         dst = parsed.destination or context.destination
-        pax = parsed.passengers or context.passengers
+        # FIX: Use parsed.passengers if available; only fallback to context if None
+        pax = parsed.passengers
+        if pax is None:
+            pax = context.passengers
         travel_class = parsed.travel_class or context.travel_class
         travel_date = parsed.travel_date or context.travel_date or self._default_travel_date()
 
@@ -704,19 +709,25 @@ class AgentService:
                 ranked = None
         if ranked is None:
             ranked = self._fallback_rank_trains(trains, parsed)
+
         out: List[Dict[str, Any]] = []
         for item in ranked:
             if isinstance(item, dict):
                 out.append(item)
             else:
+                # If item is a Recommendation object, get the train
+                if hasattr(item, "train"):
+                    train_obj = item.train
+                else:
+                    train_obj = item
                 out.append({
-                    "train_number": getattr(item, "train_number", None),
-                    "train_name": getattr(item, "train_name", ""),
-                    "departure": getattr(item, "departure", None) or getattr(item, "departure_time", None),
-                    "arrival": getattr(item, "arrival", None) or getattr(item, "arrival_time", None),
-                    "duration": getattr(item, "duration", None) or getattr(item, "journey_time", None) or getattr(item, "travel_time", None),
-                    "stops": getattr(item, "stops", None) or getattr(item, "total_stops", None),
-                    "fare": getattr(item, "fare", None) or getattr(item, "estimated_fare", None),
+                    "train_number": getattr(train_obj, "train_number", None),
+                    "train_name": getattr(train_obj, "train_name", ""),
+                    "departure": getattr(train_obj, "departure", None) or getattr(train_obj, "departure_time", None),
+                    "arrival": getattr(train_obj, "arrival", None) or getattr(train_obj, "arrival_time", None),
+                    "duration": getattr(train_obj, "duration", None) or getattr(train_obj, "journey_time", None) or getattr(train_obj, "travel_time", None),
+                    "stops": getattr(train_obj, "stops", None) or getattr(train_obj, "total_stops", None),
+                    "fare": getattr(train_obj, "fare", None) or getattr(train_obj, "estimated_fare", None),
                 })
         return out[: (parsed.limit or 5)]
 
@@ -1064,7 +1075,7 @@ class AgentService:
             "• Book 2 sleeper seats from Bangalore to Mangalore tomorrow"
         )
 
-    # ---------- LLM agent loop (FIXED) ----------
+    # ---------- LLM agent loop ----------
     def _build_messages(self, user_message: str, history: List[Dict[str, str]], context: ConversationContext) -> List[Dict[str, Any]]:
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         if any([context.source, context.destination, context.train_number, context.travel_class, context.time_hint]):
@@ -1105,7 +1116,7 @@ class AgentService:
             tool_objects = tools.build()
             tool_map = self._build_tool_map(tool_objects)
 
-            # ---- Use the official Hugging Face client (preferred) ----
+            # Use the official Hugging Face client if available
             if HF_CLIENT_AVAILABLE:
                 client = InferenceClient(
                     model=HF_MODEL_NAME,
@@ -1118,7 +1129,6 @@ class AgentService:
                 )
                 assistant_message = response.choices[0].message.content
                 if assistant_message:
-                    # Check for tool call
                     tool_call = self._parse_tool_call(assistant_message, tool_map)
                     if tool_call:
                         tool_name, tool_args = tool_call
@@ -1130,24 +1140,15 @@ class AgentService:
                                 trains = result.get("trains", [])
                                 if trains:
                                     self._remember_selected_results(session_id, parsed, trains, selected_index=0)
-                            # Return the result of the tool call (the assistant will handle it in next iteration)
-                            # Actually we need to simulate the next iteration: add tool result and continue.
-                            # For simplicity, we'll just return the tool result as a string.
-                            # But a proper agent would loop. Since we have max_iterations, we'll do a single round.
-                            # To keep it simple, we'll let the parent handle the loop by returning None? No, we need to process.
-                            # We'll implement a small loop here.
-                        # We'll fallback to requests method if client fails or doesn't support tool calling.
-                    # If no tool call, return the message.
-                    if not self._parse_tool_call(assistant_message, tool_map):
-                        return assistant_message
+                            # For simplicity, return the result message (the assistant will handle it)
+                            # But we need to simulate the next iteration. Better to use the requests loop.
+                            # We'll fall back to the requests method below.
+                        else:
+                            logger.warning(f"Tool {tool_name} not found")
                     else:
-                        # We have a tool call; we need to execute it and possibly continue.
-                        # Since we are inside the agent loop, we should let the caller handle the next iteration.
-                        # We'll return the tool result as a user message? That's messy.
-                        # Better: use the request-based method which already loops.
-                        # So we'll fallback to the request method.
-                        pass
-            # ---- Fallback to raw requests (with IPv4 fix) ----
+                        return assistant_message
+
+            # Fallback to raw requests with IPv4 fix
             for iteration in range(self.max_tool_iterations):
                 payload = {
                     "model": HF_MODEL_NAME,
@@ -1164,7 +1165,6 @@ class AgentService:
 
                 logger.info("[agent] LLM request (iter %d): %s", iteration + 1, messages[-1]["content"][:100])
 
-                # Use the requests with IPv4 forced
                 response = requests.post(HF_API_URL, json=payload, headers=headers, timeout=self.timeout)
                 if response.status_code != 200:
                     logger.error("[agent] HF API error: %s %s", response.status_code, response.text)
