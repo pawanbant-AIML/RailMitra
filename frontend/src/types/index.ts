@@ -11,6 +11,8 @@ export namespace schemas {
     destination_station_code: string;
   }
 
+  export type TrainSearchResponse = Train[];
+
   export interface Station {
     station_code: string;
     station_name: string;
@@ -43,6 +45,16 @@ export namespace schemas {
     created_at: string;
   }
 
+  export interface BookingConfirmationResponse {
+    success: boolean;
+    status: string;
+    message: string;
+    booking?: Booking | null;
+    selected_train?: Train | null;
+    missing_fields?: string[];
+    errors?: string[];
+  }
+
   export type UiAction = 'open_booking_form';
 
   export interface BookingDraft {
@@ -55,6 +67,7 @@ export namespace schemas {
     time_preference?: string;
     departure_after?: string;
     departure_before?: string;
+    berth_preference?: string;
     budget?: number;
     direct_only?: boolean;
     missing_required_fields?: string[];
@@ -82,5 +95,6 @@ export namespace schemas {
     booking_draft?: BookingDraft | null;
     missing_required_fields?: string[];
     diagnostics?: ChatDiagnostics | null;
+    metadata?: Record<string, unknown>;
   }
 }
