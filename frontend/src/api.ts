@@ -18,6 +18,11 @@ export type StructuredChatRequest =
     }
   | schemas.ChatMessage[];
 
+export type TrainSearchRequest = {
+  from_station: string;
+  to_station: string;
+};
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
@@ -31,6 +36,31 @@ function normalizeChatMessage(value: unknown): schemas.ChatMessage | null {
     return {
       role,
       content,
+    };
+  }
+
+  return null;
+}
+
+function normalizeTrain(value: unknown): schemas.Train | null {
+  if (!isObject(value)) return null;
+
+  const train_number = value.train_number;
+  const train_name = value.train_name;
+  const source_station_code = value.source_station_code;
+  const destination_station_code = value.destination_station_code;
+
+  if (
+    typeof train_number === 'string' &&
+    typeof train_name === 'string' &&
+    typeof source_station_code === 'string' &&
+    typeof destination_station_code === 'string'
+  ) {
+    return {
+      train_number,
+      train_name,
+      source_station_code,
+      destination_station_code,
     };
   }
 
@@ -101,6 +131,34 @@ export async function postStructuredChat(
             : axiosError.message || 'Failed to fetch structured chat response',
       },
     };
+  }
+}
+
+export async function searchTrains(
+  request: TrainSearchRequest
+): Promise<schemas.Train[]> {
+  try {
+    const response = await api.get('/trains/search', {
+      params: {
+        from_station: request.from_station,
+        to_station: request.to_station,
+      },
+    });
+
+    if (Array.isArray(response.data)) {
+      return response.data.map(normalizeTrain).filter(Boolean) as schemas.Train[];
+    }
+
+    return [];
+  } catch (error) {
+    const axiosError = error as AxiosError<unknown>;
+
+    console.error('Failed to search trains', {
+      status: axiosError.response?.status,
+      message: axiosError.message,
+    });
+
+    return [];
   }
 }
 
