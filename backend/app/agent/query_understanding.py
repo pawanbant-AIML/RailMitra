@@ -67,9 +67,9 @@ class QueryUnderstanding:
         "booking_create": ("book", "reserve", "buy ticket", "reserve seat"),
         "fare_query": ("fare", "cost", "price", "how much", "charge", "estimate"),
         "route_query": ("route", "where does", "stop", "stations between", "journey", "duration"),
-        "station_query": ("station", "station info", "tell me about", "near station", "station near"),
+        "station_query": ("station", "station info", "station code", "code for", "what is the code", "tell me about", "near station", "station near"),
         "train_info": ("train number", "tell me about train", "details of train", "about train"),
-        "train_search": ("show trains", "find trains", "available trains", "train from", "train to", "train between"),
+        "train_search": ("show trains", "find trains", "available trains", "need a train", "any trains", "looking for trains", "show me the train", "train from", "train to", "train between", "travel from"),
         "greeting": ("hi", "hello", "hey", "namaste", "help"),
     }
 
@@ -177,6 +177,7 @@ class QueryUnderstanding:
         "first ac": "1A",
         "executive": "EC",
         "ec": "EC",
+        "ac": "AC",
     }
 
     NUM_WORDS = {
@@ -348,27 +349,52 @@ class QueryUnderstanding:
         return out
 
     def _extract_stations(self, text: str) -> Tuple[Optional[str], Optional[str]]:
+        terminators = r"(?:\s+tomorrow|\s+today|\s+tonight|\s+after|\s+before|\s+at|\s+for|\s+in|\s+on|\s*$)"
         patterns = [
-            r"\bfrom\s+(.+?)\s+to\s+(.+?)(?:\s+tomorrow|\s+today|\s+tonight|\s+after|\s+before|\s+at|\s+for|\s+in|\s*$)",
-            r"\bbetween\s+(.+?)\s+and\s+(.+?)(?:\s+tomorrow|\s+today|\s+tonight|\s+after|\s+before|\s+at|\s+for|\s+in|\s*$)",
+            rf"\bfrom\s+(.+?)\s+to\s+(.+?){terminators}",
+            rf"\bto\s+(.+?)\s+from\s+(.+?){terminators}",
+            rf"\bbetween\s+(.+?)\s+and\s+(.+?){terminators}",
+            rf"\bfrom\s+(.+?){terminators}",
+            rf"\bto\s+(.+?){terminators}",
         ]
-        for pat in patterns:
+        for idx, pat in enumerate(patterns):
             m = re.search(pat, text, flags=re.IGNORECASE)
-            if m:
-                return self._resolve_station_phrase(m.group(1)), self._resolve_station_phrase(m.group(2))
+            if not m:
+                continue
+            if idx == 0:
+                first = self._resolve_station_phrase(m.group(1))
+                second = self._resolve_station_phrase(m.group(2))
+                if first or second:
+                    return first, second
+            elif idx == 1:
+                dest = self._resolve_station_phrase(m.group(1))
+                source = self._resolve_station_phrase(m.group(2))
+                if source or dest:
+                    return source, dest
+            elif idx == 2:
+                first = self._resolve_station_phrase(m.group(1))
+                second = self._resolve_station_phrase(m.group(2))
+                if first or second:
+                    return first, second
+            elif idx == 3:
+                source = self._resolve_station_phrase(m.group(1))
+                if source:
+                    return source, None
+            elif idx == 4:
+                dest = self._resolve_station_phrase(m.group(1))
+                if dest:
+                    return None, dest
 
         found: List[Tuple[int, str]] = []
-        padded = f" {text} "
         for alias, code in self.station_aliases.items():
-            idx = padded.find(f" {alias} ")
-            if idx != -1:
-                found.append((idx, code))
+            m = re.search(rf"(?<!\w){re.escape(alias)}(?!\w)", text, flags=re.IGNORECASE)
+            if m:
+                found.append((m.start(), code))
         if found:
             found.sort(key=lambda x: x[0])
             codes = [c for _, c in found]
             if len(codes) >= 2:
                 return codes[0], codes[1]
-            return codes[0], None
         return None, None
 
     def _resolve_station_phrase(self, phrase: str) -> Optional[str]:
@@ -414,7 +440,7 @@ class QueryUnderstanding:
     def _extract_class(self, text: str) -> Optional[str]:
         normalized = text.lower()
         for alias, code in sorted(self.class_aliases.items(), key=lambda item: -len(item[0])):
-            if alias in normalized:
+            if re.search(rf"(?<!\w){re.escape(alias)}(?!\w)", normalized):
                 return code
         return None
 
@@ -531,9 +557,9 @@ class QueryUnderstanding:
         return None
 
     def _extract_station_only(self, text: str) -> Optional[str]:
-        if re.search(r"(?:station|railway station|junction)", text, re.I):
+        if re.search(r"(?:station|railway station|junction|station code|code for|what is the code)", text, re.I):
             for alias, code in self.station_aliases.items():
-                if re.search(rf"\b{re.escape(alias)}\b", text, re.I):
+                if re.search(rf"(?<!\w){re.escape(alias)}(?!\w)", text, re.I):
                     return code
         return None
 
@@ -546,6 +572,24 @@ class QueryUnderstanding:
             return "ac"
         return None
 
+    def _has_follow_up_cue(self, text: str) -> bool:
+        lowered = text.lower().strip()
+        phrases = (
+            "what about", "that train", "this train", "that one", "this one", "same one",
+            "first one", "second one", "third one", "cheapest one", "fastest one",
+            "book it", "book that", "book this", "book the first", "book the second",
+            "what about fare", "show fare", "fare for that", "what about route", "show route",
+            "route for that", "what about stops", "stops of that", "compare options", "best option",
+        )
+        if any(phrase in lowered for phrase in phrases):
+            return True
+        return bool(re.fullmatch(r"(it|that|this|one|first|second|third|tomorrow|today|tonight)", lowered))
+
+    def _should_merge_context(self, text: str, previous_result: Optional[Dict[str, Any]]) -> bool:
+        if previous_result and previous_result.get("clarification_needed") and len(text.split()) <= 5:
+            return True
+        return self._has_follow_up_cue(text)
+
     def _merge_context(
         self,
         slots: QuerySlots,
@@ -553,6 +597,9 @@ class QueryUnderstanding:
         previous_result: Optional[Dict[str, Any]],
         text: str,
     ) -> QuerySlots:
+        if not self._should_merge_context(text, previous_result):
+            return slots
+
         mem_slots = memory.get("slots", {}) if isinstance(memory, dict) else {}
         for key in ("source", "destination", "travel_date", "travel_class", "passengers"):
             if getattr(slots, key) is None and mem_slots.get(key):
@@ -560,7 +607,7 @@ class QueryUnderstanding:
 
         if previous_result:
             entities = previous_result.get("entities", {})
-            for key, prev_key in (("source","source"), ("destination","destination"), ("travel_date","date"), ("travel_class","travel_class")):
+            for key, prev_key in (("source", "source"), ("destination", "destination"), ("travel_date", "date"), ("travel_class", "travel_class")):
                 if getattr(slots, key) is None and entities.get(prev_key):
                     setattr(slots, key, entities[prev_key])
             if slots.passengers is None and entities.get("passengers"):
