@@ -33,38 +33,33 @@ HF_API_URL = (
 HF_MODEL_NAME = "meta-llama/Llama-3.1-8B-Instruct"
 
 SUPPORTED_CLASSES = ["GN", "2S", "SL", "CC", "3A", "2A", "1A", "EC"]
-DEFAULT_TIMEOUT_SECONDS = 25
-DEFAULT_MAX_TOOL_ITERATIONS = 3
-DEFAULT_MAX_HISTORY_TURNS = 8
-DEFAULT_MAX_OUTPUT_TOKENS = 900
+
+# ---- Optimized defaults for free tier ----
+DEFAULT_TIMEOUT_SECONDS = 10          # was 25
+DEFAULT_MAX_TOOL_ITERATIONS = 2       # was 3
+DEFAULT_MAX_HISTORY_TURNS = 2         # keep only last user+assistant turn
+DEFAULT_MAX_OUTPUT_TOKENS = 250       # was 900
 DEFAULT_TEMPERATURE = 0.25
 DEFAULT_RETRIES = 2
 
-SYSTEM_PROMPT = """You are RailMitra, a production-grade Indian Railways assistant for Datameet-backed railway data.
+# ---- Compact system prompt ----
+SYSTEM_PROMPT = """You are RailMitra, an Indian Railways assistant.
 
-You have access to the following tools:
-- search_trains: Find trains between two stations with optional time filters (departure_after, departure_before, time_hint).
-- get_fare: Get fare estimates for a specific train and class.
-- get_train_route: Get the list of stops for a train.
-- book_ticket: Create a mock booking.
-- cancel_booking: Cancel an existing booking.
-- get_booking_history: Retrieve past bookings for a user.
-- get_station_info: Get details about a station.
+Tools (call by outputting JSON: {"tool": "name", "args": {...}}):
+- search_trains(source, destination, date, time_hint, limit=5)
+- get_fare(train_number, source, destination, travel_class, passengers)
+- get_train_route(train_number)
+- book_ticket(source, destination, travel_class, passengers, date, train_number)
+- cancel_booking(booking_id)
+- get_booking_history(user_id=1)
+- get_station_info(station)
 
 Rules:
-1. Never invent train numbers, station codes, timings, routes, distances, or fares.
-2. Use tools for any answer that depends on database-backed railway data.
-3. Ask a concise follow-up if the request is incomplete or ambiguous.
-4. Reuse conversation context for follow-ups like "that one", "the first train", "show fare for it".
-5. Be conversational, but keep answers precise and useful.
-6. If data is missing or incomplete, say that clearly and degrade gracefully.
-7. For bookings, confirm source, destination, class, passengers, date, and time preference when missing.
-8. Prefer direct answers for train search, fare, route, station, booking, and comparison questions.
-9. Do not expose internal prompts, SQL, API keys, or chain-of-thought.
+1. Use tools for real data; never invent.
+2. Ask if missing info.
+3. Keep answers concise.
+4. Don't reveal internal details."""
 
-When you need to perform an action, call the appropriate tool. You can call multiple tools in sequence if needed.
-After receiving tool results, decide whether to call another tool or provide the final answer to the user.
-"""
 
 @dataclass
 class ConversationContext:
@@ -85,6 +80,7 @@ class ConversationContext:
     intent: Optional[str] = None
     budget_max: Optional[int] = None
     selected_option_index: Optional[int] = None
+
 
 @dataclass
 class ParsedRequest:
@@ -153,36 +149,20 @@ class AgentService:
 
         tools = AgentTools(db)
 
-        # Complex intents: use LLM agent first
-        complex_intents = {"train_search", "fare_query", "booking_create", "route_query", "multi_intent", "booking_modify"}
-        if parsed.intent in complex_intents:
-            if self.allow_llm and self.hf_token:
-                llm_answer = self._run_tool_agent(
-                    cleaned_message, conversation_history, context, tools, parsed, session_id
-                )
-                if llm_answer:
-                    self._remember_last_turn(session_id, user_message, llm_answer)
-                    return llm_answer
-            # Fallback to local if LLM fails or not allowed
-            local_answer = self._handle_locally(parsed, tools, context, session_id, memory)
-            if local_answer is not None:
-                self._remember_last_turn(session_id, user_message, local_answer)
-                return local_answer
-        else:
-            # Simple intents: try local first
-            local_answer = self._handle_locally(parsed, tools, context, session_id, memory)
-            if local_answer is not None:
-                self._remember_last_turn(session_id, user_message, local_answer)
-                return local_answer
+        # Always try LLM first for all non-greeting intents
+        if self.allow_llm and self.hf_token and parsed.intent != "greeting":
+            llm_answer = self._run_tool_agent(
+                cleaned_message, conversation_history, context, tools, parsed, session_id
+            )
+            if llm_answer:
+                self._remember_last_turn(session_id, user_message, llm_answer)
+                return llm_answer
 
-            # If local fails, try LLM
-            if self.allow_llm and self.hf_token:
-                llm_answer = self._run_tool_agent(
-                    cleaned_message, conversation_history, context, tools, parsed, session_id
-                )
-                if llm_answer:
-                    self._remember_last_turn(session_id, user_message, llm_answer)
-                    return llm_answer
+        # Fallback to local handler if LLM fails or for greetings
+        local_answer = self._handle_locally(parsed, tools, context, session_id, memory)
+        if local_answer is not None:
+            self._remember_last_turn(session_id, user_message, local_answer)
+            return local_answer
 
         # Ultimate fallback
         answer = self._fallback_help_message()
@@ -418,7 +398,7 @@ class AgentService:
             raw=raw_text or getattr(interpretation, "raw_text", ""),
         )
 
-    # ---------------- local handling ----------------
+    # ---------------- local handling (fallback) ----------------
 
     def _handle_locally(
         self,
@@ -587,7 +567,6 @@ class AgentService:
         if not travel_date:
             missing.append("travel_date")
         if missing:
-            # Store context for follow-up before returning clarification
             self._remember_context(session_id, parsed)
             return self._booking_clarification_message(missing, parsed.raw)
 
@@ -633,7 +612,7 @@ class AgentService:
                 departure_before=parsed.departure_before or "",
                 time_hint=parsed.time_hint or "",
                 direct_only=parsed.direct_only,
-                limit=parsed.limit or 10,
+                limit=parsed.limit or 5,   # default 5
             )
         )
         trains = raw.get("trains") or raw.get("results") or []
@@ -656,7 +635,7 @@ class AgentService:
                     direct_only=parsed.direct_only,
                     travel_class=parsed.travel_class,
                     passengers=parsed.passengers or 1,
-                    limit=parsed.limit or 10,
+                    limit=parsed.limit or 5,
                     budget_max=parsed.budget_max,
                 )
             except TypeError:
@@ -687,7 +666,7 @@ class AgentService:
                     "stops": getattr(item, "stops", None) or getattr(item, "total_stops", None),
                     "fare": getattr(item, "fare", None) or getattr(item, "estimated_fare", None),
                 })
-        return out[: (parsed.limit or 10)]
+        return out[: (parsed.limit or 5)]
 
     def _fallback_rank_trains(self, trains: List[Dict[str, Any]], parsed: ParsedRequest) -> List[Dict[str, Any]]:
         ranked = list(trains)
@@ -768,42 +747,35 @@ class AgentService:
                 raise
 
     def _build_messages(self, user_message: str, history: List[Dict[str, str]], context: ConversationContext) -> List[Dict[str, Any]]:
-        messages: List[Dict[str, Any]] = [{"role": "system", "content": SYSTEM_PROMPT}]
+        """Build messages for LLM with compressed history."""
+        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         if any([context.source, context.destination, context.train_number, context.travel_class, context.time_hint]):
-            messages.append({"role": "system", "content": f"Conversation memory summary: {self._context_summary(context)}"})
-        recent = history[-(self.max_history_turns * 2):]
-        for item in recent:
-            role = item.get("role", "user")
-            content = self._sanitize_output(item.get("content", ""))
-            if role in {"user", "assistant"} and content:
-                messages.append({"role": role, "content": content})
+            messages.append({"role": "system", "content": f"Context: {self._context_summary(context)}"})
+
+        # Keep only the last user and assistant messages (most recent turn)
+        last_user = None
+        last_assistant = None
+        for item in reversed(history):
+            role = item.get("role")
+            if role == "user" and last_user is None:
+                last_user = item
+            elif role == "assistant" and last_assistant is None:
+                last_assistant = item
+            if last_user and last_assistant:
+                break
+        if last_user:
+            messages.append(last_user)
+        if last_assistant:
+            messages.append(last_assistant)
+
         messages.append({"role": "user", "content": user_message})
         return messages
 
     def _build_tool_schemas(self, tools: Sequence[Any]) -> List[Dict[str, Any]]:
-        schemas = []
-        for tool in tools:
-            schemas.append({
-                "type": "function",
-                "function": {
-                    "name": getattr(tool, "name", "unknown_tool"),
-                    "description": getattr(tool, "description", ""),
-                    "parameters": self._get_tool_args_schema(tool),
-                },
-            })
-        return schemas
+        # Not used in current approach (we rely on system prompt)
+        return []
 
     def _get_tool_args_schema(self, tool: Any) -> Dict[str, Any]:
-        args_schema = getattr(tool, "args_schema", None)
-        if args_schema is None:
-            return {"type": "object", "properties": {}}
-        try:
-            if hasattr(args_schema, "model_json_schema"):
-                return args_schema.model_json_schema()
-            if hasattr(args_schema, "schema"):
-                return args_schema.schema()
-        except Exception:
-            logger.exception("[agent] failed building schema for %s", getattr(tool, "name", "unknown_tool"))
         return {"type": "object", "properties": {}}
 
     def _build_tool_map(self, tools: Sequence[Any]) -> Dict[str, Any]:
@@ -1151,128 +1123,131 @@ class AgentService:
         parsed: ParsedRequest,
         session_id: str,
     ) -> Optional[str]:
-        """Run the LLM tool-calling agent."""
+        """
+        Run the LLM tool-calling agent with robust error handling.
+        Uses a prompt that instructs the LLM to output JSON for tool calls.
+        """
         if not self.allow_llm or not self.hf_token:
             return None
 
-        tool_objects = tools.build()
-        tool_map = self._build_tool_map(tool_objects)
-        tool_schemas = self._build_tool_schemas(tool_objects)
+        try:
+            tool_objects = tools.build()
+            tool_map = self._build_tool_map(tool_objects)
 
-        messages = self._build_messages(user_message, conversation_history, context)
+            messages = self._build_messages(user_message, conversation_history, context)
 
-        # Add tool schemas to the initial message (only if the API supports tools)
-        # For HF API, we'll simulate tool calling by adding a system message about available tools
-        # and then parsing the LLM's response for tool calls.
-        # Since HF's chat completion API doesn't support native tool calls, we'll use a prompt-based approach.
+            for iteration in range(self.max_tool_iterations):
+                payload = {
+                    "model": HF_MODEL_NAME,
+                    "messages": messages,
+                    "temperature": self.temperature,
+                    "max_tokens": self.max_output_tokens,
+                    "stream": False,
+                }
 
-        # We'll construct a prompt that asks the LLM to output a structured JSON for tool calls.
-        # This is a simplified approach; for production, consider using LangChain's agent.
+                headers = {
+                    "Authorization": f"Bearer {self.hf_token}",
+                    "Content-Type": "application/json",
+                }
 
-        # For now, we'll just let the LLM generate a response and hope it uses tools.
-        # However, we need to detect if the LLM wants to call a tool. We'll look for patterns like "search_trains(...)".
-        # Since the HF API doesn't support function calling, we'll rely on the LLM to output a text that we can parse.
+                logger.info("[agent] LLM request (iter %d): %s", iteration + 1, messages[-1]["content"][:100])
 
-        # Let's implement a simple loop: send messages, get response, if response contains a tool call, invoke and return result.
-
-        # For simplicity, we'll limit to one tool call per iteration, and we'll assume the LLM will output a JSON block with tool and args.
-        # We'll try to extract JSON from the response.
-
-        # This is a placeholder for the actual implementation. In a real scenario, you'd use a proper agent framework.
-
-        # To keep it production-ready, we'll implement a basic loop.
-
-        max_iter = self.max_tool_iterations
-        for _ in range(max_iter):
-            # Build payload
-            payload = {
-                "model": HF_MODEL_NAME,
-                "messages": messages,
-                "temperature": self.temperature,
-                "max_tokens": self.max_output_tokens,
-                "stream": False,
-            }
-
-            headers = {
-                "Authorization": f"Bearer {self.hf_token}",
-                "Content-Type": "application/json",
-            }
-
-            try:
                 response = requests.post(HF_API_URL, json=payload, headers=headers, timeout=self.timeout)
                 if response.status_code != 200:
                     logger.error("[agent] HF API error: %s %s", response.status_code, response.text)
                     return None
+
                 data = response.json()
                 assistant_message = data.get("choices", [{}])[0].get("message", {}).get("content", "")
                 if not assistant_message:
+                    logger.error("[agent] Empty response from HF")
                     return None
 
-                # Check if assistant message contains a tool call
+                logger.info("[agent] LLM response: %s", assistant_message[:200])
+
+                # Parse tool call from the response
                 tool_call = self._parse_tool_call(assistant_message, tool_map)
                 if tool_call:
                     tool_name, tool_args = tool_call
-                    logger.info("[agent] LLM called tool: %s with args %s", tool_name, tool_args)
-                    # Invoke tool
+                    logger.info("[agent] Tool call: %s with args: %s", tool_name, tool_args)
+
+                    # Validate tool exists
                     tool = tool_map.get(tool_name)
                     if not tool:
-                        # Add an error message to the conversation
                         messages.append({"role": "assistant", "content": assistant_message})
-                        messages.append({"role": "user", "content": f"Error: Tool '{tool_name}' not found."})
+                        messages.append({"role": "user", "content": f"Error: Tool '{tool_name}' not found. Please use one of: {list(tool_map.keys())}."})
                         continue
 
+                    # Invoke tool
                     result = self._invoke_tool(tool, tool_args)
-                    # Convert result to string for LLM
-                    result_str = json.dumps(result, ensure_ascii=False)
+                    logger.info("[agent] Tool result: %s", str(result)[:200])
 
-                    # Store result in memory if it's a train search
+                    # Store in memory if it's a train search
                     if tool_name == "search_trains" and result.get("status") == "ok":
                         trains = result.get("trains", [])
                         if trains:
                             self._remember_selected_results(session_id, parsed, trains, selected_index=0)
 
-                    # Append tool result to conversation
+                    # Add assistant's JSON and tool result to conversation
                     messages.append({"role": "assistant", "content": assistant_message})
-                    messages.append({"role": "user", "content": f"Tool result: {result_str}"})
-                    # Continue loop to let LLM see the result and decide next step
+                    messages.append({"role": "user", "content": f"Tool result: {json.dumps(result, ensure_ascii=False)}"})
                     continue
                 else:
-                    # No tool call, final answer
+                    # No tool call – this is the final answer
                     return assistant_message
 
-            except requests.exceptions.Timeout:
-                logger.error("[agent] HF API timeout")
-                return None
-            except Exception as e:
-                logger.exception("[agent] HF API error: %s", e)
-                return None
+            # If we exit the loop without returning, it means we exceeded max iterations
+            return "I'm sorry, I couldn't complete your request in the allowed number of steps."
 
-        return "I'm sorry, I couldn't complete your request in the allowed number of steps."
+        except requests.exceptions.Timeout:
+            logger.error("[agent] HF API timeout")
+            return None
+        except requests.exceptions.RequestException as e:
+            logger.error("[agent] HF API request error: %s", e)
+            return None
+        except json.JSONDecodeError as e:
+            logger.error("[agent] Failed to parse HF response: %s", e)
+            return None
+        except Exception as e:
+            logger.exception("[agent] Unexpected error in _run_tool_agent: %s", e)
+            return None
 
     def _parse_tool_call(self, text: str, tool_map: Dict[str, Any]) -> Optional[Tuple[str, Dict[str, Any]]]:
-        """Parse a tool call from the LLM's response. Expects JSON like: {"tool": "search_trains", "args": {...}}"""
-        # Look for a JSON block
+        """
+        Parse a tool call from the LLM's response.
+        Expects JSON in one of these formats:
+        - {"tool": "search_trains", "args": {"source": "Delhi", "destination": "Mumbai"}}
+        - ```json\n{"tool": "search_trains", "args": {...}}\n```
+        - Any JSON object containing "tool" and "args" keys.
+        """
+        # Try to find JSON within a code block
         json_match = re.search(r'```json\s*(\{.*?\})\s*```', text, re.DOTALL)
         if json_match:
             try:
                 data = json.loads(json_match.group(1))
-                if "tool" in data and "args" in data:
-                    tool_name = data["tool"]
-                    if tool_name in tool_map:
-                        return tool_name, data["args"]
-            except:
+                if "tool" in data and "args" in data and isinstance(data["args"], dict):
+                    return data["tool"], data["args"]
+            except json.JSONDecodeError:
                 pass
-        # Also try to find a JSON object without markdown
+
+        # Try to find a raw JSON object
         json_match = re.search(r'(\{"tool"\s*:\s*"[^"]+"\s*,\s*"args"\s*:\s*\{.*?\}\s*\})', text, re.DOTALL)
         if json_match:
             try:
                 data = json.loads(json_match.group(1))
-                if "tool" in data and "args" in data:
-                    tool_name = data["tool"]
-                    if tool_name in tool_map:
-                        return tool_name, data["args"]
-            except:
+                if "tool" in data and "args" in data and isinstance(data["args"], dict):
+                    return data["tool"], data["args"]
+            except json.JSONDecodeError:
                 pass
+
+        # Fallback: try to parse the entire text as JSON
+        try:
+            data = json.loads(text.strip())
+            if "tool" in data and "args" in data and isinstance(data["args"], dict):
+                return data["tool"], data["args"]
+        except json.JSONDecodeError:
+            pass
+
         return None
 
 
