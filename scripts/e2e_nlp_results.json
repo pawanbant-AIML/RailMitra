@@ -2,3686 +2,832 @@
   {
     "index": 1,
     "query": "Show trains from Bangalore to Mangalore",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "show trains from bangalore to mangalore"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 2,
     "query": "Find trains from Bengaluru to Mangaluru",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "find trains from bengaluru to mangaluru"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 3,
     "query": "Find trains between Bangalore and Mangalore",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "find trains between bangalore and mangalore"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 4,
     "query": "Show trains from Pune to Hyderabad",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "PUNE",
-      "destination": "HYB",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "show trains from pune to hyderabad"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 5,
     "query": "Show trains from Delhi to Chennai",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "NDLS",
-      "destination": "MAS",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "show trains from delhi to chennai"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 6,
     "query": "Show trains from Mysore to Bangalore",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "MYS",
-      "destination": "SBC",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "show trains from mysore to bangalore"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 7,
     "query": "Show trains from Mangalore to Bangalore",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "MAQ",
-      "destination": "SBC",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "show trains from mangalore to bangalore"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 8,
     "query": "Any trains from Chennai to Hyderabad?",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "MAS",
-      "destination": "HYB",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "any trains from chennai to hyderabad?"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 9,
     "query": "Train from Bangalore to Goa",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAO",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from bangalore to goa"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 10,
     "query": "Train from Hubli to Bangalore",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "UBL",
-      "destination": "SBC",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from hubli to bangalore"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 11,
     "query": "Train from Banglore to Manglore",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from banglore to manglore"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 12,
     "query": "Train from Bengluru to Mangaloor",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from bengluru to mangaloor"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 13,
     "query": "Train from Hydrabad to Pune",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "HYB",
-      "destination": "PUNE",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from hydrabad to pune"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 14,
     "query": "Train from Delhii to Chennai",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "NDLS",
-      "destination": "MAS",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from delhii to chennai"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 15,
     "query": "Train from Mysuru to Bangluru",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "MYS",
-      "destination": "SBC",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from mysuru to bangluru"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 16,
     "query": "Train from Bengaluru to Mangaluru",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from bengaluru to mangaluru"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 17,
     "query": "Train from Bombay to Delhi",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "CSMT",
-      "destination": "NDLS",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from bombay to delhi"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 18,
     "query": "Train from Madras to Bangalore",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "MAS",
-      "destination": "SBC",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from madras to bangalore"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 19,
     "query": "Train from Calcutta to Delhi",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "HWH",
-      "destination": "NDLS",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from calcutta to delhi"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 20,
     "query": "Train from Trivandrum to Kochi",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "TVC",
-      "destination": "ERS",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from trivandrum to kochi"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 21,
     "query": "Train from Vizag to Chennai",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "VSKP",
-      "destination": "MAS",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from vizag to chennai"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 22,
     "query": "Tell me about train 12627",
-    "intent": "TRAIN_INFO",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": "12627",
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.54,
-    "normalized_text": "tell me about train 12627"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 23,
     "query": "Tell me about train 16585",
-    "intent": "TRAIN_INFO",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": "16585",
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.54,
-    "normalized_text": "tell me about train 16585"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 24,
     "query": "Route of train 12657",
-    "intent": "TRAIN_INFO",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": "12657",
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.54,
-    "normalized_text": "route of train 12657"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 25,
     "query": "Train details 12627",
-    "intent": "TRAIN_INFO",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": "12627",
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.54,
-    "normalized_text": "train details 12627"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 26,
     "query": "Show stops for train 12657",
-    "intent": "TRAIN_INFO",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": "12657",
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.54,
-    "normalized_text": "show stops for train 12657"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 27,
     "query": "How long is train 12657",
-    "intent": "TRAIN_INFO",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": "12657",
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.54,
-    "normalized_text": "how long is train 12657"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 28,
     "query": "Route from Bangalore to Mangalore",
-    "intent": "CHECK_ROUTE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "CHECK_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "route from bangalore to mangalore"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 29,
     "query": "Best route from Pune to Hyderabad",
-    "intent": "CHECK_ROUTE",
-    "entities": {
-      "source": "PUNE",
-      "destination": "HYB",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "CHECK_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "best route from pune to hyderabad"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 30,
     "query": "Direct route from Bangalore to Goa",
-    "intent": "CHECK_ROUTE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAO",
-      "travel_class": "EC",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "CHECK_ROUTE",
-    "confidence": 0.72,
-    "normalized_text": "direct route from bangalore to goa"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 31,
     "query": "Any direct train from Mysore to Chennai",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "MYS",
-      "destination": "MAS",
-      "travel_class": "EC",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.72,
-    "normalized_text": "any direct train from mysore to chennai"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 32,
     "query": "Show stations between Bangalore and Mangalore",
-    "intent": "CHECK_ROUTE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "CHECK_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "show stations between bangalore and mangalore"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 33,
     "query": "Show all stops for train 12627",
-    "intent": "TRAIN_INFO",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": "12627",
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.54,
-    "normalized_text": "show all stops for train 12627"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 34,
     "query": "Fare from Bangalore to Mangalore",
-    "intent": "FARE_ESTIMATE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.63,
-    "normalized_text": "fare from bangalore to mangalore"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 35,
     "query": "Sleeper fare from Bangalore to Mangalore",
-    "intent": "FARE_ESTIMATE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": "SL",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.72,
-    "normalized_text": "sleeper fare from bangalore to mangalore"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 36,
     "query": "3A fare from Bangalore to Mangalore",
-    "intent": "FARE_ESTIMATE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": "3A",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.72,
-    "normalized_text": "3a fare from bangalore to mangalore"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 37,
     "query": "General ticket cost Bangalore to Mangalore",
-    "intent": "FARE_ESTIMATE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": "GN",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.72,
-    "normalized_text": "general ticket cost bangalore to mangalore"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 38,
     "query": "Cheapest fare Bangalore to Mangalore",
-    "intent": "CHEAPEST_ROUTE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "cheapest"
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.6900000000000001,
-    "normalized_text": "cheapest fare bangalore to mangalore"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 39,
     "query": "Compare Sleeper and 3A",
-    "intent": "COMPARE_ROUTES",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": "SL",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.13999999999999996,
-    "normalized_text": "compare sleeper and 3a"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 40,
     "query": "Compare 2A and 3A",
-    "intent": "COMPARE_ROUTES",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": "3A",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.13999999999999996,
-    "normalized_text": "compare 2a and 3a"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 41,
     "query": "Fare for 2 passengers",
-    "intent": "FARE_ESTIMATE",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": 2,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.3,
-    "normalized_text": "fare for 2 passengers"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 42,
     "query": "Fare for 3 passengers",
-    "intent": "FARE_ESTIMATE",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": 3,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.3,
-    "normalized_text": "fare for 3 passengers"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 43,
     "query": "Fare for family of 4",
-    "intent": "FARE_ESTIMATE",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.25,
-    "normalized_text": "fare for family of 4"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 44,
     "query": "Fare for 5 adults",
-    "intent": "FARE_ESTIMATE",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.25,
-    "normalized_text": "fare for 5 adults"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 45,
     "query": "Fare for 2 sleeper tickets",
-    "intent": "FARE_ESTIMATE",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": "SL",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.34,
-    "normalized_text": "fare for 2 sleeper tickets"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 46,
     "query": "Cost for 3 AC tickets",
-    "intent": "FARE_ESTIMATE",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": "3A",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.34,
-    "normalized_text": "cost for 3 ac tickets"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 47,
     "query": "Which train is cheapest?",
-    "intent": "CHEAPEST_ROUTE",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "cheapest"
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.31,
-    "normalized_text": "which train is cheapest?"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 48,
     "query": "Cheapest train Bangalore to Mangalore",
-    "intent": "CHEAPEST_ROUTE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "cheapest"
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.6900000000000001,
-    "normalized_text": "cheapest train bangalore to mangalore"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 49,
     "query": "Lowest fare Bangalore to Chennai",
-    "intent": "CHEAPEST_ROUTE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAS",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "cheapest"
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.6900000000000001,
-    "normalized_text": "lowest fare bangalore to chennai"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 50,
     "query": "Most economical train",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": "EC",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.34,
-    "normalized_text": "most economical train"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 51,
     "query": "Budget train Bangalore to Goa",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAO",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "cheapest"
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.66,
-    "normalized_text": "budget train bangalore to goa"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 52,
     "query": "Fastest train Bangalore to Mangalore",
-    "intent": "FASTEST_ROUTE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "fastest"
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.6900000000000001,
-    "normalized_text": "fastest train bangalore to mangalore"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 53,
     "query": "Quickest route to Chennai",
-    "intent": "CHECK_ROUTE",
-    "entities": {
-      "source": "MAS",
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "fastest"
-    },
-    "missing": [
-      "destination",
-      "train_number"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.37000000000000005,
-    "normalized_text": "quickest route to chennai"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 54,
     "query": "Train with shortest journey",
-    "intent": "CHECK_ROUTE",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "shortest"
-    },
-    "missing": [
-      "source",
-      "destination",
-      "train_number"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.31,
-    "normalized_text": "train with shortest journey"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 55,
     "query": "Which train reaches first?",
-    "intent": "GREETING",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.45,
-    "normalized_text": "which train reaches first?"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 56,
     "query": "Fastest option Pune to Hyderabad",
-    "intent": "FASTEST_ROUTE",
-    "entities": {
-      "source": "PUNE",
-      "destination": "HYB",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "fastest"
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.49,
-    "normalized_text": "fastest option pune to hyderabad"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 57,
     "query": "Show trains after 8 PM",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.27999999999999997,
-    "normalized_text": "show trains after 8 pm"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 58,
     "query": "Show trains before 6 AM",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.27999999999999997,
-    "normalized_text": "show trains before 6 am"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 59,
     "query": "Show trains between 7 PM and 10 PM",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.25,
-    "normalized_text": "show trains between 7 pm and 10 pm"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 60,
     "query": "Morning trains",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.27999999999999997,
-    "normalized_text": "morning trains"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 61,
     "query": "Evening trains",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.27999999999999997,
-    "normalized_text": "evening trains"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 62,
     "query": "Night trains",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "overnight"
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.31,
-    "normalized_text": "night trains"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 63,
     "query": "Overnight trains",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "overnight"
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.31,
-    "normalized_text": "overnight trains"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 64,
     "query": "Trains leaving after 9 PM",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.27999999999999997,
-    "normalized_text": "trains leaving after 9 pm"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 65,
     "query": "Trains arriving before 8 AM",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.27999999999999997,
-    "normalized_text": "trains arriving before 8 am"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 66,
     "query": "Train tomorrow",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": "2026-06-19",
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.3,
-    "normalized_text": "train tomorrow"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 67,
     "query": "Train today",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": "2026-06-18",
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.3,
-    "normalized_text": "train today"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 68,
     "query": "Train tonight",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "overnight"
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.31,
-    "normalized_text": "train tonight"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 69,
     "query": "Train next Monday",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.25,
-    "normalized_text": "train next monday"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 70,
     "query": "Train this weekend",
-    "intent": "GREETING",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.45,
-    "normalized_text": "train this weekend"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 71,
     "query": "Train on Friday",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.25,
-    "normalized_text": "train on friday"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 72,
     "query": "Train after 2 days",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.27999999999999997,
-    "normalized_text": "train after 2 days"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 73,
     "query": "Train on 25th December",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": "EC",
-      "date": "2026-12-25",
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.39000000000000007,
-    "normalized_text": "train on 25th december"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 74,
     "query": "Book a ticket",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination",
-      "travel_class",
-      "passengers",
-      "travel_date"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.13,
-    "normalized_text": "book a ticket"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 75,
     "query": "Book a sleeper ticket",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": "SL",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination",
-      "passengers",
-      "travel_date"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.34,
-    "normalized_text": "book a sleeper ticket"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 76,
     "query": "Book 2 tickets",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": 2,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination",
-      "travel_class",
-      "travel_date"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.3,
-    "normalized_text": "book 2 tickets"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 77,
     "query": "Book 3 tickets",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": 3,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination",
-      "travel_class",
-      "travel_date"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.3,
-    "normalized_text": "book 3 tickets"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 78,
     "query": "Book a 3A ticket",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": "3A",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination",
-      "passengers",
-      "travel_date"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.34,
-    "normalized_text": "book a 3a ticket"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 79,
     "query": "Book 2 sleeper tickets",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": "SL",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination",
-      "passengers",
-      "travel_date"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.34,
-    "normalized_text": "book 2 sleeper tickets"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 80,
     "query": "Book ticket Bangalore to Hyderabad",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": "SBC",
-      "destination": "HYB",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "travel_class",
-      "passengers",
-      "travel_date"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.43,
-    "normalized_text": "book ticket bangalore to hyderabad"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 81,
     "query": "Book ticket Pune to Hyderabad tomorrow",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": "PUNE",
-      "destination": "HYB",
-      "travel_class": null,
-      "date": "2026-06-19",
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "travel_class",
-      "passengers"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.48000000000000004,
-    "normalized_text": "book ticket pune to hyderabad tomorrow"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 82,
     "query": "Book train after 8 PM",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination",
-      "travel_class",
-      "passengers",
-      "travel_date"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.27999999999999997,
-    "normalized_text": "book train after 8 pm"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 83,
     "query": "Book sleeper after 8 PM",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": "SL",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination",
-      "passengers",
-      "travel_date"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.37000000000000005,
-    "normalized_text": "book sleeper after 8 pm"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 84,
     "query": "Book 3A after 9 PM",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": "3A",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination",
-      "passengers",
-      "travel_date"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.37000000000000005,
-    "normalized_text": "book 3a after 9 pm"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 85,
     "query": "Book overnight train",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "overnight"
-    },
-    "missing": [
-      "source",
-      "destination",
-      "travel_class",
-      "passengers",
-      "travel_date"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.31,
-    "normalized_text": "book overnight train"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 86,
     "query": "Book morning train",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination",
-      "travel_class",
-      "passengers",
-      "travel_date"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.27999999999999997,
-    "normalized_text": "book morning train"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 87,
     "query": "Book train tomorrow after 8 PM",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": "2026-06-19",
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination",
-      "travel_class",
-      "passengers"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.33,
-    "normalized_text": "book train tomorrow after 8 pm"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 88,
     "query": "Book 2 tickets tomorrow evening",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": "2026-06-19",
-      "passengers": 2,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination",
-      "travel_class"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.38000000000000006,
-    "normalized_text": "book 2 tickets tomorrow evening"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 89,
     "query": "Book 2 sleeper tickets from Bangalore to Hyderabad",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": "SBC",
-      "destination": "HYB",
-      "travel_class": "SL",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "passengers",
-      "travel_date"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.52,
-    "normalized_text": "book 2 sleeper tickets from bangalore to hyderabad"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 90,
     "query": "Book 3A ticket from Pune to Hyderabad",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": "PUNE",
-      "destination": "HYB",
-      "travel_class": "3A",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "passengers",
-      "travel_date"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.52,
-    "normalized_text": "book 3a ticket from pune to hyderabad"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 91,
     "query": "Book AC ticket Bangalore to Chennai",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAS",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "travel_class",
-      "passengers",
-      "travel_date"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.43,
-    "normalized_text": "book ac ticket bangalore to chennai"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 92,
     "query": "Book 2A Bangalore to Goa",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAO",
-      "travel_class": "2A",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "passengers",
-      "travel_date"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.52,
-    "normalized_text": "book 2a bangalore to goa"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 93,
     "query": "Book sleeper Bangalore to Mangalore tomorrow",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": "SL",
-      "date": "2026-06-19",
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "passengers"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.5700000000000001,
-    "normalized_text": "book sleeper bangalore to mangalore tomorrow"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 94,
     "query": "Show trains from Bangalore to Mangalore please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "show trains from bangalore to mangalore please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 95,
     "query": "Find trains from Bengaluru to Mangaluru please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "find trains from bengaluru to mangaluru please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 96,
     "query": "Find trains between Bangalore and Mangalore please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "find trains between bangalore and mangalore please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 97,
     "query": "Show trains from Pune to Hyderabad please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "PUNE",
-      "destination": "HYB",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "show trains from pune to hyderabad please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 98,
     "query": "Show trains from Delhi to Chennai please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "NDLS",
-      "destination": "MAS",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "show trains from delhi to chennai please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 99,
     "query": "Show trains from Mysore to Bangalore please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "MYS",
-      "destination": "SBC",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "show trains from mysore to bangalore please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 100,
     "query": "Show trains from Mangalore to Bangalore please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "MAQ",
-      "destination": "SBC",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "show trains from mangalore to bangalore please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 101,
     "query": "Any trains from Chennai to Hyderabad? please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "MAS",
-      "destination": "HYB",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "any trains from chennai to hyderabad? please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 102,
     "query": "Train from Bangalore to Goa please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAO",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from bangalore to goa please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 103,
     "query": "Train from Hubli to Bangalore please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "UBL",
-      "destination": "SBC",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from hubli to bangalore please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 104,
     "query": "Train from Banglore to Manglore please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from banglore to manglore please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 105,
     "query": "Train from Bengluru to Mangaloor please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from bengluru to mangaloor please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 106,
     "query": "Train from Hydrabad to Pune please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "HYB",
-      "destination": "PUNE",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from hydrabad to pune please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 107,
     "query": "Train from Delhii to Chennai please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "NDLS",
-      "destination": "MAS",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from delhii to chennai please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 108,
     "query": "Train from Mysuru to Bangluru please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "MYS",
-      "destination": "SBC",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from mysuru to bangluru please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 109,
     "query": "Train from Bengaluru to Mangaluru please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from bengaluru to mangaluru please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 110,
     "query": "Train from Bombay to Delhi please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "CSMT",
-      "destination": "NDLS",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from bombay to delhi please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 111,
     "query": "Train from Madras to Bangalore please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "MAS",
-      "destination": "SBC",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from madras to bangalore please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 112,
     "query": "Train from Calcutta to Delhi please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "HWH",
-      "destination": "NDLS",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from calcutta to delhi please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 113,
     "query": "Train from Trivandrum to Kochi please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "TVC",
-      "destination": "ERS",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from trivandrum to kochi please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 114,
     "query": "Train from Vizag to Chennai please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "VSKP",
-      "destination": "MAS",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from vizag to chennai please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 115,
     "query": "Tell me about train 12627 please",
-    "intent": "TRAIN_INFO",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": "12627",
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.54,
-    "normalized_text": "tell me about train 12627 please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 116,
     "query": "Tell me about train 16585 please",
-    "intent": "TRAIN_INFO",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": "16585",
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.54,
-    "normalized_text": "tell me about train 16585 please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 117,
     "query": "Route of train 12657 please",
-    "intent": "TRAIN_INFO",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": "12657",
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.54,
-    "normalized_text": "route of train 12657 please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 118,
     "query": "Train details 12627 please",
-    "intent": "TRAIN_INFO",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": "12627",
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.54,
-    "normalized_text": "train details 12627 please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 119,
     "query": "Show stops for train 12657 please",
-    "intent": "TRAIN_INFO",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": "12657",
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.54,
-    "normalized_text": "show stops for train 12657 please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 120,
     "query": "How long is train 12657 please",
-    "intent": "TRAIN_INFO",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": "12657",
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.54,
-    "normalized_text": "how long is train 12657 please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 121,
     "query": "Route from Bangalore to Mangalore please",
-    "intent": "CHECK_ROUTE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "CHECK_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "route from bangalore to mangalore please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 122,
     "query": "Best route from Pune to Hyderabad please",
-    "intent": "CHECK_ROUTE",
-    "entities": {
-      "source": "PUNE",
-      "destination": "HYB",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "CHECK_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "best route from pune to hyderabad please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 123,
     "query": "Direct route from Bangalore to Goa please",
-    "intent": "CHECK_ROUTE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAO",
-      "travel_class": "EC",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "CHECK_ROUTE",
-    "confidence": 0.72,
-    "normalized_text": "direct route from bangalore to goa please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 124,
     "query": "Any direct train from Mysore to Chennai please",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "MYS",
-      "destination": "MAS",
-      "travel_class": "EC",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.72,
-    "normalized_text": "any direct train from mysore to chennai please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 125,
     "query": "Show stations between Bangalore and Mangalore please",
-    "intent": "CHECK_ROUTE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "CHECK_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "show stations between bangalore and mangalore please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 126,
     "query": "Show all stops for train 12627 please",
-    "intent": "TRAIN_INFO",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": "12627",
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.54,
-    "normalized_text": "show all stops for train 12627 please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 127,
     "query": "Fare from Bangalore to Mangalore please",
-    "intent": "FARE_ESTIMATE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.63,
-    "normalized_text": "fare from bangalore to mangalore please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 128,
     "query": "Sleeper fare from Bangalore to Mangalore please",
-    "intent": "FARE_ESTIMATE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": "SL",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.72,
-    "normalized_text": "sleeper fare from bangalore to mangalore please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 129,
     "query": "3A fare from Bangalore to Mangalore please",
-    "intent": "FARE_ESTIMATE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": "3A",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.72,
-    "normalized_text": "3a fare from bangalore to mangalore please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 130,
     "query": "General ticket cost Bangalore to Mangalore please",
-    "intent": "FARE_ESTIMATE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": "GN",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.72,
-    "normalized_text": "general ticket cost bangalore to mangalore please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 131,
     "query": "Cheapest fare Bangalore to Mangalore please",
-    "intent": "CHEAPEST_ROUTE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "cheapest"
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.6900000000000001,
-    "normalized_text": "cheapest fare bangalore to mangalore please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 132,
     "query": "Compare Sleeper and 3A please",
-    "intent": "COMPARE_ROUTES",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": "SL",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.13999999999999996,
-    "normalized_text": "compare sleeper and 3a please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 133,
     "query": "Compare 2A and 3A please",
-    "intent": "COMPARE_ROUTES",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": "3A",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.13999999999999996,
-    "normalized_text": "compare 2a and 3a please"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 134,
     "query": "Train from Madras to Bengaluru",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "MAS",
-      "destination": "SBC",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from madras to bengaluru"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 135,
     "query": "Route from Bengaluru to Mangaluru",
-    "intent": "CHECK_ROUTE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "CHECK_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "route from bengaluru to mangaluru"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 136,
     "query": "Direct route from Bengaluru to Goa",
-    "intent": "CHECK_ROUTE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAO",
-      "travel_class": "EC",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "CHECK_ROUTE",
-    "confidence": 0.72,
-    "normalized_text": "direct route from bengaluru to goa"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 137,
     "query": "Show stations between Bengaluru and Mangaluru",
-    "intent": "CHECK_ROUTE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "CHECK_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "show stations between bengaluru and mangaluru"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 138,
     "query": "Fare from Bengaluru to Mangaluru",
-    "intent": "FARE_ESTIMATE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.63,
-    "normalized_text": "fare from bengaluru to mangaluru"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 139,
     "query": "Sleeper fare from Bengaluru to Mangaluru",
-    "intent": "FARE_ESTIMATE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": "SL",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.72,
-    "normalized_text": "sleeper fare from bengaluru to mangaluru"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 140,
     "query": "3A fare from Bengaluru to Mangaluru",
-    "intent": "FARE_ESTIMATE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": "3A",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.72,
-    "normalized_text": "3a fare from bengaluru to mangaluru"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 141,
     "query": "General ticket cost Bengaluru to Mangaluru",
-    "intent": "FARE_ESTIMATE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": "GN",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.72,
-    "normalized_text": "general ticket cost bengaluru to mangaluru"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 142,
     "query": "Cheapest fare Bengaluru to Mangaluru",
-    "intent": "CHEAPEST_ROUTE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "cheapest"
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.6900000000000001,
-    "normalized_text": "cheapest fare bengaluru to mangaluru"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 143,
     "query": "Cheapest train Bengaluru to Mangaluru",
-    "intent": "CHEAPEST_ROUTE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "cheapest"
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.6900000000000001,
-    "normalized_text": "cheapest train bengaluru to mangaluru"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 144,
     "query": "Lowest fare Bengaluru to Chennai",
-    "intent": "CHEAPEST_ROUTE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAS",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "cheapest"
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.6900000000000001,
-    "normalized_text": "lowest fare bengaluru to chennai"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 145,
     "query": "Train from Bangalore to Mangalore on day 1",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from bangalore to mangalore on day 1"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 146,
     "query": "Train from Bangalore to Mangalore on day 2",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from bangalore to mangalore on day 2"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 147,
     "query": "Train from Bangalore to Mangalore on day 3",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from bangalore to mangalore on day 3"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 148,
     "query": "Train from Bangalore to Mangalore on day 4",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from bangalore to mangalore on day 4"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 149,
     "query": "Train from Bangalore to Mangalore on day 5",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from bangalore to mangalore on day 5"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 150,
     "query": "Train from Bangalore to Mangalore on day 6",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from bangalore to mangalore on day 6"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 151,
     "query": "Train from Bangalore to Mangalore on day 7",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from bangalore to mangalore on day 7"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 152,
     "query": "Train from Bangalore to Mangalore on day 8",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from bangalore to mangalore on day 8"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 153,
     "query": "Train from Bangalore to Mangalore on day 9",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from bangalore to mangalore on day 9"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 154,
     "query": "Train from Bangalore to Mangalore on day 10",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from bangalore to mangalore on day 10"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 155,
     "query": "I need a train",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.13,
-    "normalized_text": "i need a train"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 156,
     "query": "Show options",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.0,
-    "normalized_text": "show options"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 157,
     "query": "Need cheapest one",
-    "intent": "CHEAPEST_ROUTE",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": 1,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "cheapest"
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.15999999999999998,
-    "normalized_text": "need cheapest one"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 158,
     "query": "Need fastest one",
-    "intent": "FASTEST_ROUTE",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": 1,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "fastest"
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.15999999999999998,
-    "normalized_text": "need fastest one"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 159,
     "query": "Need something comfortable",
-    "intent": "GREETING",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "comfort"
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.36,
-    "normalized_text": "need something comfortable"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 160,
     "query": "Find a train for me",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": null,
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source",
-      "destination"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.13,
-    "normalized_text": "find a train for me"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 161,
     "query": "Train from XYZ to ABC",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "XYZ",
-      "destination": "ABC",
-      "travel_class": null,
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.63,
-    "normalized_text": "train from xyz to abc"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 162,
     "query": "Train from FakeCity to Bangalore",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": null,
-      "destination": "SBC",
-      "travel_class": "EC",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [
-      "source"
-    ],
-    "clarification": true,
-    "next_action": "ASK_CLARIFICATION",
-    "confidence": 0.43,
-    "normalized_text": "train from fakecity to bangalore"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 163,
     "query": "Train from Bangalore to UnknownStation",
-    "intent": "STATION_QUERY",
-    "entities": {
-      "source": "SBC",
-      "destination": null,
-      "travel_class": null,
-      "date": "2026-06-18",
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "RESPOND",
-    "confidence": 0.5900000000000001,
-    "normalized_text": "train from bangalore to unknownstation"
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 164,
     "query": "Find cheapest sleeper train from Bangalore to Mangalore tomorrow after 8 PM and compare it with the fastest option and tell me which is better for a family of four.",
-    "intent": "CHEAPEST_ROUTE",
-    "entities": {
-      "source": "SBC",
-      "destination": "MAQ",
-      "travel_class": "SL",
-      "date": "2026-06-19",
-      "passengers": 4,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": "cheapest"
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.9100000000000001,
-    "normalized_text": "find cheapest sleeper train from bangalore to mangalore tomorrow after 8 pm and compare it with the fastest option and tell me which is better for a family of four."
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 165,
     "query": "Book two 3A tickets from Bangalore to Hyderabad tomorrow evening and show total fare.",
-    "intent": "BOOK_TICKET",
-    "entities": {
-      "source": "SBC",
-      "destination": "HYB",
-      "travel_class": "3A",
-      "date": "2026-06-19",
-      "passengers": 2,
-      "booking_id": null,
-      "train_number": null,
-      "budget": null,
-      "preference": null
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "BOOK_TICKET",
-    "confidence": 0.8500000000000001,
-    "normalized_text": "book two 3a tickets from bangalore to hyderabad tomorrow evening and show total fare."
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "index": 166,
     "query": "Recommend an overnight train from Pune to Hyderabad under ₹1000.",
-    "intent": "ROUTE_SEARCH",
-    "entities": {
-      "source": "PUNE",
-      "destination": "HYB",
-      "travel_class": "EC",
-      "date": null,
-      "passengers": null,
-      "booking_id": null,
-      "train_number": null,
-      "budget": 1000.0,
-      "preference": "overnight"
-    },
-    "missing": [],
-    "clarification": false,
-    "next_action": "SEARCH_ROUTE",
-    "confidence": 0.78,
-    "normalized_text": "recommend an overnight train from pune to hyderabad under ₹1000."
+    "error": "'QueryUnderstanding' object has no attribute '_normalize'"
   },
   {
     "conversation_id": 1,
@@ -3690,120 +836,31 @@
         "conversation": 1,
         "step": 1,
         "message": "Book a ticket from Bangalore to Hyderabad",
-        "intent": "BOOK_TICKET",
-        "entities": {
-          "source": "SBC",
-          "destination": "HYB",
-          "travel_class": null,
-          "date": null,
-          "passengers": null,
-          "booking_id": null,
-          "train_number": null,
-          "budget": null,
-          "preference": null
-        },
-        "missing": [
-          "travel_class",
-          "passengers",
-          "travel_date"
-        ],
-        "clarification": true,
-        "next_action": "ASK_CLARIFICATION",
-        "confidence": 0.31,
-        "normalized_text": "book a ticket from bangalore to hyderabad"
+        "error": "'QueryUnderstanding' object has no attribute '_normalize'"
       },
       {
         "conversation": 1,
         "step": 2,
         "message": "Tomorrow",
-        "intent": "BOOK_TICKET",
-        "entities": {
-          "source": "SBC",
-          "destination": "HYB",
-          "travel_class": null,
-          "date": "2026-06-19",
-          "passengers": null,
-          "booking_id": null,
-          "train_number": null,
-          "budget": null,
-          "preference": null
-        },
-        "missing": [
-          "travel_class",
-          "passengers"
-        ],
-        "clarification": true,
-        "next_action": "ASK_CLARIFICATION",
-        "confidence": 0.53,
-        "normalized_text": "tomorrow"
+        "error": "'QueryUnderstanding' object has no attribute '_normalize'"
       },
       {
         "conversation": 1,
         "step": 3,
         "message": "3A",
-        "intent": "BOOK_TICKET",
-        "entities": {
-          "source": "SBC",
-          "destination": "HYB",
-          "travel_class": "3A",
-          "date": "2026-06-19",
-          "passengers": null,
-          "booking_id": null,
-          "train_number": null,
-          "budget": null,
-          "preference": null
-        },
-        "missing": [
-          "passengers"
-        ],
-        "clarification": true,
-        "next_action": "ASK_CLARIFICATION",
-        "confidence": 0.6200000000000001,
-        "normalized_text": "3a"
+        "error": "'QueryUnderstanding' object has no attribute '_normalize'"
       },
       {
         "conversation": 1,
         "step": 4,
         "message": "2 passengers",
-        "intent": "BOOK_TICKET",
-        "entities": {
-          "source": "SBC",
-          "destination": "HYB",
-          "travel_class": "3A",
-          "date": "2026-06-19",
-          "passengers": 2,
-          "booking_id": null,
-          "train_number": null,
-          "budget": null,
-          "preference": null
-        },
-        "missing": [],
-        "clarification": false,
-        "next_action": "BOOK_TICKET",
-        "confidence": 0.8700000000000001,
-        "normalized_text": "2 passengers"
+        "error": "'QueryUnderstanding' object has no attribute '_normalize'"
       },
       {
         "conversation": 1,
         "step": 5,
         "message": "Confirm booking",
-        "intent": "BOOK_TICKET",
-        "entities": {
-          "source": "SBC",
-          "destination": "HYB",
-          "travel_class": "3A",
-          "date": "2026-06-19",
-          "passengers": 2,
-          "booking_id": null,
-          "train_number": null,
-          "budget": null,
-          "preference": null
-        },
-        "missing": [],
-        "clarification": false,
-        "next_action": "BOOK_TICKET",
-        "confidence": 0.8700000000000001,
-        "normalized_text": "confirm booking"
+        "error": "'QueryUnderstanding' object has no attribute '_normalize'"
       }
     ]
   },
@@ -3814,140 +871,37 @@
         "conversation": 2,
         "step": 1,
         "message": "Show trains Bangalore to Mangalore",
-        "intent": "ROUTE_SEARCH",
-        "entities": {
-          "source": "SBC",
-          "destination": "MAQ",
-          "travel_class": null,
-          "date": null,
-          "passengers": null,
-          "booking_id": null,
-          "train_number": null,
-          "budget": null,
-          "preference": null
-        },
-        "missing": [],
-        "clarification": false,
-        "next_action": "SEARCH_ROUTE",
-        "confidence": 0.63,
-        "normalized_text": "show trains bangalore to mangalore"
+        "error": "'QueryUnderstanding' object has no attribute '_normalize'"
       },
       {
         "conversation": 2,
         "step": 2,
         "message": "Which is cheapest?",
-        "intent": "CHEAPEST_ROUTE",
-        "entities": {
-          "source": "SBC",
-          "destination": "MAQ",
-          "travel_class": null,
-          "date": null,
-          "passengers": null,
-          "booking_id": null,
-          "train_number": null,
-          "budget": null,
-          "preference": "cheapest"
-        },
-        "missing": [],
-        "clarification": false,
-        "next_action": "SEARCH_ROUTE",
-        "confidence": 0.54,
-        "normalized_text": "which is cheapest?"
+        "error": "'QueryUnderstanding' object has no attribute '_normalize'"
       },
       {
         "conversation": 2,
         "step": 3,
         "message": "Show fare",
-        "intent": "FARE_ESTIMATE",
-        "entities": {
-          "source": "SBC",
-          "destination": "MAQ",
-          "travel_class": null,
-          "date": null,
-          "passengers": null,
-          "booking_id": null,
-          "train_number": null,
-          "budget": null,
-          "preference": null
-        },
-        "missing": [],
-        "clarification": false,
-        "next_action": "RESPOND",
-        "confidence": 0.68,
-        "normalized_text": "show fare"
+        "error": "'QueryUnderstanding' object has no attribute '_normalize'"
       },
       {
         "conversation": 2,
         "step": 4,
         "message": "Book the first one",
-        "intent": "BOOK_TICKET",
-        "entities": {
-          "source": "SBC",
-          "destination": "MAQ",
-          "travel_class": null,
-          "date": null,
-          "passengers": 1,
-          "booking_id": null,
-          "train_number": null,
-          "budget": null,
-          "preference": null
-        },
-        "missing": [
-          "travel_class",
-          "travel_date"
-        ],
-        "clarification": true,
-        "next_action": "ASK_CLARIFICATION",
-        "confidence": 0.53,
-        "normalized_text": "book the first one"
+        "error": "'QueryUnderstanding' object has no attribute '_normalize'"
       },
       {
         "conversation": 2,
         "step": 5,
         "message": "Change to sleeper class",
-        "intent": "BOOK_TICKET",
-        "entities": {
-          "source": "SBC",
-          "destination": "MAQ",
-          "travel_class": "SL",
-          "date": null,
-          "passengers": 1,
-          "booking_id": null,
-          "train_number": null,
-          "budget": null,
-          "preference": null
-        },
-        "missing": [
-          "travel_date"
-        ],
-        "clarification": true,
-        "next_action": "ASK_CLARIFICATION",
-        "confidence": 0.6200000000000001,
-        "normalized_text": "change to sleeper class"
+        "error": "'QueryUnderstanding' object has no attribute '_normalize'"
       },
       {
         "conversation": 2,
         "step": 6,
         "message": "Confirm booking",
-        "intent": "BOOK_TICKET",
-        "entities": {
-          "source": "SBC",
-          "destination": "MAQ",
-          "travel_class": "SL",
-          "date": null,
-          "passengers": 1,
-          "booking_id": null,
-          "train_number": null,
-          "budget": null,
-          "preference": null
-        },
-        "missing": [
-          "travel_date"
-        ],
-        "clarification": true,
-        "next_action": "ASK_CLARIFICATION",
-        "confidence": 0.6200000000000001,
-        "normalized_text": "confirm booking"
+        "error": "'QueryUnderstanding' object has no attribute '_normalize'"
       }
     ]
   }
