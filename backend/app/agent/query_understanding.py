@@ -412,7 +412,8 @@ class QueryUnderstanding:
         return None
 
     def _extract_passengers(self, text: str) -> Optional[int]:
-        m = re.search(r"\b(\d+)\s*(?:passenger|pax|ticket|seat|person|people|traveller|traveler)s?\b", text, re.I)
+        # Updated regex to allow an optional word between number and noun (e.g., "2 sleeper tickets")
+        m = re.search(r"\b(\d+)\s*(?:\w+\s+)?(?:passenger|pax|ticket|seat|person|people|traveller|traveler)s?\b", text, re.I)
         if m:
             return int(m.group(1))
         for word, value in self.NUM_WORDS.items():
