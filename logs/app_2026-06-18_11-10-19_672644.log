@@ -1,0 +1,2 @@
+2026-06-18 11:10:31.232 | INFO     | app.api.v1.endpoints.chat:chat_endpoint:111 - [chat] session=%s user_msg=%r history_turns=%d
+2026-06-18 11:10:31.267 | INFO     | app.api.v1.endpoints.chat:chat_endpoint:111 - [chat] session=%s user_msg=%r history_turns=%d

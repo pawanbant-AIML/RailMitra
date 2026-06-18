@@ -20,7 +20,7 @@ Legacy / debugging NLP route is kept at /chat/analyze.
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -45,7 +45,7 @@ class ChatRequest(BaseModel):
     """
     message: str = Field(..., min_length=1)
     session_id: Optional[str] = Field(default=None)
-    history: Optional[List[schemas.ChatMessage]] = Field(default_factory=list)
+    history: List[schemas.ChatMessage] = Field(default_factory=list)
 
 
 @router.post("/chat/analyze")
@@ -58,40 +58,55 @@ def analyze_chat(request: ChatAnalysisRequest):
 
 @router.post("/chat", response_model=List[schemas.ChatMessage])
 def chat_endpoint(
-    request: ChatRequest,
+    request: Union[ChatRequest, List[schemas.ChatMessage]],
     db: Session = Depends(get_db),
 ):
     """
     Main chat endpoint.
 
-    Accepts:
-      - message: current user message
-      - session_id: conversation/session identifier
-      - history: previous messages from the frontend
+    Accepts either the new frontend payload:
+      {message, session_id, history}
+    or the legacy raw history array for backward compatibility.
 
     Returns:
       - full message list (previous history + current user message + assistant reply)
     """
-    message = (request.message or "").strip()
-    if not message:
-        raise HTTPException(status_code=400, detail="Message cannot be empty.")
+    if isinstance(request, list):
+        raw_history = request
+        if not raw_history:
+            raise HTTPException(status_code=400, detail="History cannot be empty.")
+        last_item = raw_history[-1]
+        if (last_item.role or "").strip() != "user" or not (last_item.content or "").strip():
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Legacy chat body must end with the latest user message. "
+                    "Send the new request shape {message, session_id, history} instead."
+                ),
+            )
+        message = last_item.content.strip()
+        session_id = "default"
+        history_items = raw_history[:-1]
+        response_messages: List[schemas.ChatMessage] = list(raw_history)
+    else:
+        message = (request.message or "").strip()
+        if not message:
+            raise HTTPException(status_code=400, detail="Message cannot be empty.")
 
-    session_id = (request.session_id or "default").strip() or "default"
+        session_id = (request.session_id or "default").strip() or "default"
+        history_items = request.history or []
+        response_messages: List[schemas.ChatMessage] = list(history_items)
+        response_messages.append(schemas.ChatMessage(role="user", content=message))
 
-    # Build conversation history for the agent
+    # Build conversation history for the agent from previous turns only
     conversation_history = []
-    for item in request.history or []:
+    for item in history_items:
         if not item:
             continue
         role = (item.role or "").strip()
         content = (item.content or "").strip()
         if role in {"user", "assistant"} and content:
-            conversation_history.append(
-                {
-                    "role": role,
-                    "content": content,
-                }
-            )
+            conversation_history.append({"role": role, "content": content})
 
     logger.info(
         "[chat] session=%s user_msg=%r history_turns=%d",
@@ -114,9 +129,5 @@ def chat_endpoint(
             "Please try again or rephrase your question."
         )
 
-    # Return the updated chat list
-    response_messages: List[schemas.ChatMessage] = list(request.history or [])
-    response_messages.append(schemas.ChatMessage(role="user", content=message))
     response_messages.append(schemas.ChatMessage(role="assistant", content=reply))
-
     return response_messages
