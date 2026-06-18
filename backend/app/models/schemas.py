@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 class TrainBase(BaseModel):
@@ -65,3 +65,37 @@ class Booking(BookingBase):
 class ChatMessage(BaseModel):
     role: str
     content: str
+
+class BookingDraft(BaseModel):
+    source: Optional[str] = None
+    destination: Optional[str] = None
+    travel_date: Optional[str] = None
+    travel_class: Optional[str] = None
+    passenger_count: Optional[int] = None
+    train_number: Optional[str] = None
+    time_preference: Optional[str] = None
+    departure_after: Optional[str] = None
+    departure_before: Optional[str] = None
+    berth_preference: Optional[str] = None
+    budget: Optional[int] = None
+    direct_only: bool = False
+    ready_for_submit: bool = False
+    missing_required_fields: List[str] = Field(default_factory=list)
+
+class ChatDiagnostics(BaseModel):
+    intent: Optional[str] = None
+    route: str = "unknown"
+    llm_attempted: bool = False
+    llm_used: bool = False
+    local_handler_used: bool = False
+    fallback_used: bool = False
+    llm_error: Optional[str] = None
+    local_error: Optional[str] = None
+
+class StructuredChatResponse(BaseModel):
+    messages: List[ChatMessage]
+    action: Optional[str] = None
+    booking_draft: Optional[BookingDraft] = None
+    missing_required_fields: List[str] = Field(default_factory=list)
+    diagnostics: ChatDiagnostics = Field(default_factory=ChatDiagnostics)
+    metadata: Dict[str, Any] = Field(default_factory=dict)

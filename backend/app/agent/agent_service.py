@@ -9,7 +9,7 @@ import os
 import re
 import socket
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
@@ -51,6 +51,14 @@ HF_API_URL = (
 HF_MODEL_NAME = "meta-llama/Llama-3.1-8B-Instruct"
 
 SUPPORTED_CLASSES = ["GN", "2S", "SL", "CC", "3A", "2A", "1A", "EC"]
+BOOKING_REQUIRED_FIELDS = (
+    "source",
+    "destination",
+    "travel_date",
+    "travel_class",
+    "passenger_count",
+    "train_number",
+)
 
 # ---- Optimized defaults for free tier ----
 DEFAULT_TIMEOUT_SECONDS = 10
@@ -74,6 +82,7 @@ You have these tools:
 
 Instructions:
 - For every user request, first decide which tool to call (if any) or if you need to ask a clarifying question.
+- For booking requests in chat, do not create the booking directly. Ask the user to review the booking form.
 - If the user's request is complete, output a JSON object: {"tool": "tool_name", "args": {...}}.
 - If the request is incomplete, ask for the missing info in plain text.
 - Keep responses concise.
@@ -130,6 +139,15 @@ class ParsedRequest:
     raw: str = ""
 
 
+@dataclass
+class AgentRunResult:
+    answer: str
+    action: Optional[str] = None
+    booking_draft: Optional[Dict[str, Any]] = None
+    missing_required_fields: List[str] = field(default_factory=list)
+    diagnostics: Dict[str, Any] = field(default_factory=dict)
+
+
 class AgentService:
     def __init__(self, session_store: Optional[SessionMemoryStore] = None) -> None:
         self.session_store = session_store or default_session_memory_store
@@ -157,6 +175,22 @@ class AgentService:
         session_id: str = "default",
         user_id: Optional[int] = None,
     ) -> str:
+        return self.run_structured(
+            user_message=user_message,
+            conversation_history=conversation_history,
+            db=db,
+            session_id=session_id,
+            user_id=user_id,
+        ).answer
+
+    def run_structured(
+        self,
+        user_message: str,
+        conversation_history: List[Dict[str, str]],
+        db: Session,
+        session_id: str = "default",
+        user_id: Optional[int] = None,
+    ) -> AgentRunResult:
         cleaned_message = self._normalize_text(user_message)
         logger.info("[agent] incoming=%r", cleaned_message[:240])
 
@@ -174,38 +208,112 @@ class AgentService:
         parsed = self._parsed_from_interpretation(interpretation, memory, cleaned_message, previous_result)
 
         tools = AgentTools(db)
+        diagnostics: Dict[str, Any] = {
+            "intent": parsed.intent,
+            "route": "unknown",
+            "llm_attempted": False,
+            "llm_used": False,
+            "local_handler_used": False,
+            "fallback_used": False,
+            "llm_error": None,
+            "local_error": None,
+        }
+
+        # Booking intent is draft-only in chat. Final creation must happen from
+        # a validated booking form/submit endpoint.
+        if parsed.intent == "booking_create":
+            result = self._handle_booking_draft(parsed, context, session_id, memory, diagnostics)
+            self._remember_last_turn(session_id, user_message, result.answer)
+            self._log_run_diagnostics(session_id, result.diagnostics)
+            return result
 
         # If the request is incomplete, keep it local so we preserve the clarification flow.
         if interpretation.clarification_needed:
-            local_answer = self._handle_locally_full(parsed, tools, context, session_id, memory)
+            local_answer = self._call_local_handler(parsed, tools, context, session_id, memory, diagnostics)
             if local_answer is not None:
+                diagnostics["route"] = "local_handler"
+                diagnostics["local_handler_used"] = True
                 self._remember_last_turn(session_id, user_message, local_answer)
-                return local_answer
+                self._log_run_diagnostics(session_id, diagnostics)
+                return AgentRunResult(answer=local_answer, diagnostics=diagnostics)
 
         # Only let the LLM handle clear, non-follow-up requests.
-        if (
+        llm_allowed = (
             self.allow_llm
             and self.hf_token
             and parsed.intent != "greeting"
             and not self._should_bypass_llm(cleaned_message, interpretation, memory, previous_result)
-        ):
+        )
+        if llm_allowed:
+            diagnostics["llm_attempted"] = True
             llm_answer = self._run_tool_agent(
                 cleaned_message, conversation_history, context, tools, parsed, session_id
             )
             if llm_answer:
+                diagnostics["route"] = "llm"
+                diagnostics["llm_used"] = True
                 self._remember_last_turn(session_id, user_message, llm_answer)
-                return llm_answer
+                self._log_run_diagnostics(session_id, diagnostics)
+                return AgentRunResult(answer=llm_answer, diagnostics=diagnostics)
+            diagnostics["llm_error"] = "no_response_or_error"
+            diagnostics["fallback_used"] = True
+            logger.warning("[agent] LLM unavailable or empty; falling back to local handler")
+        else:
+            if not self.allow_llm:
+                diagnostics["llm_error"] = "disabled"
+            elif not self.hf_token:
+                diagnostics["llm_error"] = "missing_token"
+            elif parsed.intent == "greeting":
+                diagnostics["llm_error"] = "bypassed_for_greeting"
+            else:
+                diagnostics["llm_error"] = "bypassed_for_context"
 
         # Fallback to full local handler if LLM fails
-        local_answer = self._handle_locally_full(parsed, tools, context, session_id, memory)
+        local_answer = self._call_local_handler(parsed, tools, context, session_id, memory, diagnostics)
         if local_answer is not None:
+            diagnostics["route"] = "local_after_llm" if diagnostics["llm_attempted"] else "local_handler"
+            diagnostics["local_handler_used"] = True
             self._remember_last_turn(session_id, user_message, local_answer)
-            return local_answer
+            self._log_run_diagnostics(session_id, diagnostics)
+            return AgentRunResult(answer=local_answer, diagnostics=diagnostics)
 
         # Ultimate fallback
         answer = self._fallback_help_message()
+        diagnostics["route"] = "fallback_help"
+        diagnostics["fallback_used"] = True
         self._remember_last_turn(session_id, user_message, answer)
-        return answer
+        self._log_run_diagnostics(session_id, diagnostics)
+        return AgentRunResult(answer=answer, diagnostics=diagnostics)
+
+    def _call_local_handler(
+        self,
+        parsed: ParsedRequest,
+        tools: AgentTools,
+        context: ConversationContext,
+        session_id: str,
+        memory: Any,
+        diagnostics: Dict[str, Any],
+    ) -> Optional[str]:
+        try:
+            return self._handle_locally_full(parsed, tools, context, session_id, memory)
+        except Exception as exc:
+            diagnostics["local_error"] = f"{type(exc).__name__}: {exc}"
+            logger.exception("[agent] Local handler failed: %s", exc)
+            return None
+
+    def _log_run_diagnostics(self, session_id: str, diagnostics: Dict[str, Any]) -> None:
+        logger.info(
+            "[agent] session=%s route=%s intent=%s llm_attempted=%s llm_used=%s local_used=%s fallback=%s llm_error=%s local_error=%s",
+            session_id,
+            diagnostics.get("route"),
+            diagnostics.get("intent"),
+            diagnostics.get("llm_attempted"),
+            diagnostics.get("llm_used"),
+            diagnostics.get("local_handler_used"),
+            diagnostics.get("fallback_used"),
+            diagnostics.get("llm_error"),
+            diagnostics.get("local_error"),
+        )
 
     # ---------- Memory helpers ----------
     def _get_or_create_memory(self, session_id: str, user_id: Optional[int]) -> Any:
@@ -385,6 +493,9 @@ class AgentService:
         if not text:
             return False
 
+        if self._has_fresh_route_request(text):
+            return False
+
         if getattr(memory, "clarification_pending", False):
             return True
 
@@ -401,6 +512,20 @@ class AgentService:
             if len(text.split()) <= 4 and re.search(r"\b(first|second|third|that|it|one)\b", text):
                 return True
 
+        return False
+
+    def _has_fresh_route_request(self, text: str) -> bool:
+        normalized = self._normalize_text(text)
+        if re.search(r"\bfrom\s+\S.+\bto\s+\S", normalized):
+            return True
+        if re.search(r"\bbetween\s+\S.+\band\s+\S", normalized):
+            return True
+        try:
+            src, dst = self.query_understanding._extract_stations(normalized)
+            if src or dst:
+                return True
+        except Exception:
+            pass
         return False
 
     def _should_bypass_llm(
@@ -674,82 +799,117 @@ class AgentService:
         return self._format_fare_table(fare, src, dst, pax)
 
     def _handle_booking_query(self, parsed: ParsedRequest, tools: AgentTools, context: ConversationContext, session_id: str, memory: Any) -> Optional[str]:
-        src = parsed.source or context.source
-        dst = parsed.destination or context.destination
-        # Use parsed.passengers if available; only fallback to context if None
-        pax = parsed.passengers if parsed.passengers is not None else context.passengers
-        travel_class = parsed.travel_class or context.travel_class
-        travel_date = parsed.travel_date or context.travel_date
-
-        if (not src or not dst) and self._is_contextual_follow_up(parsed.raw):
-            prev = self._memory_previous_result(memory)
-            if prev:
-                route_ctx = self._previous_route_context(prev)
-                src = src or route_ctx.get("source")
-                dst = dst or route_ctx.get("destination")
-                travel_class = travel_class or route_ctx.get("travel_class")
-                if pax is None:
-                    pax = route_ctx.get("passengers")
-                travel_date = parsed.travel_date or route_ctx.get("travel_date") or travel_date
-
-        missing = []
-        if not src:
-            missing.append("source")
-        if not dst:
-            missing.append("destination")
-        if not travel_class:
-            missing.append("travel_class")
-        if not pax:
-            missing.append("passengers")
-        if not travel_date:
-            missing.append("travel_date")
-        if missing:
-            self._remember_context(session_id, parsed)
-            return self._booking_clarification_message(missing, parsed.raw)
-
-        trains = self._search_trains(parsed, tools)
-        if not trains:
-            return f"I could not find any trains from **{src}** to **{dst}** for booking. Try using station codes or nearby cities."
-
-        ranked = self._rank_trains(trains, parsed, src, dst)
-        if not ranked:
-            return "I found route data, but I could not choose a train to book. Please try a different route."
-
-        train_number = None
-        for candidate in ranked:
-            tn = candidate.get("train_number") if isinstance(candidate, dict) else getattr(candidate, "train_number", None)
-            if tn:
-                train_number = tn
-                break
-        if not train_number:
-            for train in trains:
-                tn = train.get("train_number") if isinstance(train, dict) else getattr(train, "train_number", None)
-                if tn:
-                    train_number = tn
-                    break
-
-        if not train_number:
-            return "I found trains, but the train number is missing in the available data. Please try specifying a train number."
-
-        self._remember_selected_results(session_id, parsed, ranked, selected_index=0)
-
-        book = self._safe_tool_json(
-            self._invoke_compat(
-                tools.book_ticket,
-                source=src,
-                destination=dst,
-                travel_class=travel_class,
-                passengers=pax,
-                travel_date=travel_date or self._default_travel_date(),
-                train_number=train_number,
-                departure_after=parsed.departure_after or "",
-                departure_before=parsed.departure_before or "",
-                time_hint=parsed.time_hint or "",
-            )
+        draft = self._build_booking_draft(parsed, context, memory)
+        self._remember_context(session_id, parsed)
+        logger.info(
+            "[agent] booking_create handled as draft action=open_booking_form missing=%s",
+            draft.get("missing_required_fields", []),
         )
-        if book.get("status") != "confirmed":
-            return self._friendly_tool_error("booking", book)
-        return self._format_booking_confirmation(book)
+        return self._format_booking_draft_message(draft)
+
+    def _handle_booking_draft(
+        self,
+        parsed: ParsedRequest,
+        context: ConversationContext,
+        session_id: str,
+        memory: Any,
+        diagnostics: Dict[str, Any],
+    ) -> AgentRunResult:
+        draft = self._build_booking_draft(parsed, context, memory)
+        answer = self._format_booking_draft_message(draft)
+        self._remember_context(session_id, parsed)
+        diagnostics["route"] = "booking_draft"
+        diagnostics["local_handler_used"] = True
+        logger.info(
+            "[agent] booking draft prepared session=%s missing=%s ready=%s",
+            session_id,
+            draft.get("missing_required_fields", []),
+            draft.get("ready_for_submit"),
+        )
+        return AgentRunResult(
+            answer=answer,
+            action="open_booking_form",
+            booking_draft=draft,
+            missing_required_fields=list(draft.get("missing_required_fields", [])),
+            diagnostics=dict(diagnostics),
+        )
+
+    def _build_booking_draft(
+        self,
+        parsed: ParsedRequest,
+        context: Optional[ConversationContext] = None,
+        memory: Any = None,
+        tool_args: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        tool_args = tool_args or {}
+        follow_up = self._is_contextual_follow_up(parsed.raw)
+        route_ctx = self._previous_route_context(self._memory_previous_result(memory)) if follow_up and memory is not None else {}
+
+        def contextual_value(name: str) -> Any:
+            if not follow_up or context is None:
+                return None
+            return getattr(context, name, None)
+
+        passenger_count = (
+            parsed.passengers
+            if parsed.passengers is not None
+            else tool_args.get("passenger_count")
+            or tool_args.get("passengers")
+            or contextual_value("passengers")
+            or route_ctx.get("passengers")
+        )
+        try:
+            passenger_count = int(passenger_count) if passenger_count not in (None, "") else None
+        except Exception:
+            passenger_count = None
+
+        draft: Dict[str, Any] = {
+            "source": parsed.source or tool_args.get("source") or contextual_value("source") or route_ctx.get("source"),
+            "destination": parsed.destination or tool_args.get("destination") or contextual_value("destination") or route_ctx.get("destination"),
+            "travel_date": parsed.travel_date or tool_args.get("travel_date") or tool_args.get("date") or contextual_value("travel_date") or route_ctx.get("travel_date"),
+            "travel_class": parsed.travel_class or tool_args.get("travel_class") or contextual_value("travel_class") or route_ctx.get("travel_class"),
+            "passenger_count": passenger_count,
+            "train_number": parsed.train_number or tool_args.get("train_number") or contextual_value("train_number") or route_ctx.get("train_number"),
+            "time_preference": parsed.time_hint or tool_args.get("time_hint") or contextual_value("time_hint"),
+            "departure_after": parsed.departure_after or tool_args.get("departure_after") or contextual_value("departure_after"),
+            "departure_before": parsed.departure_before or tool_args.get("departure_before") or contextual_value("departure_before"),
+            "berth_preference": tool_args.get("berth_preference"),
+            "budget": parsed.budget_max or tool_args.get("budget") or tool_args.get("budget_max") or contextual_value("budget_max"),
+            "direct_only": bool(parsed.direct_only or tool_args.get("direct_only", False)),
+        }
+
+        missing = [field_name for field_name in BOOKING_REQUIRED_FIELDS if not draft.get(field_name)]
+        draft["missing_required_fields"] = missing
+        draft["ready_for_submit"] = not missing
+        return draft
+
+    def _format_booking_draft_message(self, draft: Dict[str, Any]) -> str:
+        labels = {
+            "source": "source",
+            "destination": "destination",
+            "travel_date": "travel date",
+            "travel_class": "travel class",
+            "passenger_count": "passenger count",
+            "train_number": "train selection",
+        }
+        prefilled = []
+        for key in ("source", "destination", "travel_date", "travel_class", "passenger_count", "train_number"):
+            value = draft.get(key)
+            if value not in (None, "", [], {}):
+                prefilled.append(f"{labels[key]}: **{value}**")
+
+        lines = ["I prepared a booking draft. I will not create the booking until the form is reviewed and submitted."]
+        if prefilled:
+            lines.append("\nPrefilled from the request/context: " + ", ".join(prefilled) + ".")
+
+        missing = draft.get("missing_required_fields", [])
+        if missing:
+            pretty = [labels.get(item, item) for item in missing]
+            lines.append("Missing required fields: **" + ", ".join(pretty) + "**.")
+        else:
+            lines.append("All required fields are present. Please review the form before submitting.")
+
+        return "\n".join(lines)
 
     def _search_trains(self, parsed: ParsedRequest, tools: AgentTools) -> List[Dict[str, Any]]:
         raw = self._safe_tool_json(
@@ -1282,6 +1442,10 @@ class AgentService:
                     if tool_call:
                         tool_name, tool_args = tool_call
                         logger.info("[agent] Tool call: %s with args: %s", tool_name, tool_args)
+                        if tool_name == "book_ticket":
+                            logger.warning("[agent] Suppressed LLM book_ticket tool call; returning booking draft text")
+                            draft = self._build_booking_draft(parsed, context, tool_args=tool_args)
+                            return self._format_booking_draft_message(draft)
                         tool = tool_map.get(tool_name)
                         if tool:
                             result = self._invoke_tool(tool, tool_args)
@@ -1330,6 +1494,11 @@ class AgentService:
                 if tool_call:
                     tool_name, tool_args = tool_call
                     logger.info("[agent] Tool call: %s with args: %s", tool_name, tool_args)
+
+                    if tool_name == "book_ticket":
+                        logger.warning("[agent] Suppressed LLM book_ticket tool call; returning booking draft text")
+                        draft = self._build_booking_draft(parsed, context, tool_args=tool_args)
+                        return self._format_booking_draft_message(draft)
 
                     tool = tool_map.get(tool_name)
                     if not tool:

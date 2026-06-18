@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from fastapi.testclient import TestClient
 
 import app.api.v1.endpoints.chat as chat_module
+from app.agent.agent_service import AgentRunResult
 from app.main import app
 
 
@@ -63,3 +64,69 @@ def test_chat_endpoint_accepts_legacy_history_array(monkeypatch):
 
     assert response.status_code == 200
     assert response.json() == payload + [{"role": "assistant", "content": "Legacy reply"}]
+
+
+def test_structured_chat_endpoint_returns_booking_action(monkeypatch):
+    def fake_run_structured(user_message, conversation_history, db, session_id):
+        assert user_message == "book me a ticket from Bangalore to Mumbai"
+        assert session_id == "booking-session"
+        assert conversation_history == []
+        return AgentRunResult(
+            answer="I prepared a booking draft.",
+            action="open_booking_form",
+            booking_draft={
+                "source": "SBC",
+                "destination": "CSMT",
+                "travel_date": None,
+                "travel_class": None,
+                "passenger_count": None,
+                "train_number": None,
+                "direct_only": False,
+                "ready_for_submit": False,
+                "missing_required_fields": [
+                    "travel_date",
+                    "travel_class",
+                    "passenger_count",
+                    "train_number",
+                ],
+            },
+            missing_required_fields=[
+                "travel_date",
+                "travel_class",
+                "passenger_count",
+                "train_number",
+            ],
+            diagnostics={
+                "intent": "booking_create",
+                "route": "booking_draft",
+                "llm_attempted": False,
+                "llm_used": False,
+                "local_handler_used": True,
+                "fallback_used": False,
+            },
+        )
+
+    monkeypatch.setattr(chat_module._agent_svc, "run_structured", fake_run_structured)
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/v1/chat/structured",
+        json={
+            "message": "book me a ticket from Bangalore to Mumbai",
+            "session_id": "booking-session",
+            "history": [],
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["action"] == "open_booking_form"
+    assert payload["booking_draft"]["source"] == "SBC"
+    assert payload["booking_draft"]["destination"] == "CSMT"
+    assert payload["missing_required_fields"] == [
+        "travel_date",
+        "travel_class",
+        "passenger_count",
+        "train_number",
+    ]
+    assert payload["diagnostics"]["route"] == "booking_draft"
