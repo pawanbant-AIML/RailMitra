@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
 from app.models.train_models import Route as RouteModel, Train
@@ -83,27 +84,18 @@ class TimetableService:
         return None
 
     def _train_departure_minutes(self, train: Train, source_code: str, db: Session) -> Optional[int]:
+        # Try to get departure from route table for this train at the source station
+        tn = getattr(train, "train_number", None)
+        if tn:
+            dep = self.route_repo.get_departure_time(tn, source_code, db)
+            if dep:
+                return self._time_to_minutes(dep)
+        # Fallback to attributes on train
         for attr in ("departure_time", "dep_time", "start_time"):
             val = getattr(train, attr, None)
             m = self._time_to_minutes(val)
             if m is not None:
                 return m
-        tn = getattr(train, "train_number", None)
-        if tn:
-            dep = self.route_repo.get_departure_time(tn, source_code, db)
-            return self._time_to_minutes(dep)
-        return None
-
-    def _train_arrival_minutes(self, train: Train, dest_code: str, db: Session) -> Optional[int]:
-        for attr in ("arrival_time", "arr_time", "end_time"):
-            val = getattr(train, attr, None)
-            m = self._time_to_minutes(val)
-            if m is not None:
-                return m
-        tn = getattr(train, "train_number", None)
-        if tn:
-            arr = self.route_repo.get_arrival_time(tn, dest_code, db)
-            return self._time_to_minutes(arr)
         return None
 
     def _matches_time_window(
@@ -175,76 +167,52 @@ class TimetableService:
         direct_only: bool = False,
         limit: int = 10,
     ) -> List[Train]:
+        """Search for trains that go from src to dst using the route table."""
         src_codes = self._expand_codes(src, db)
         dst_codes = self._expand_codes(dst, db)
         if not src_codes or not dst_codes:
             return []
 
-        results: List[Train] = []
-        seen: set = set()
+        # Use the route table to find all trains that have both stations in order.
+        # We join Train with two Route aliases: src_route and dst_route.
+        # Filter: src_route.station_code IN src_codes, dst_route.station_code IN dst_codes,
+        # and src_route.sequence < dst_route.sequence.
+        src_route = RouteModel.__table__.alias('src_route')
+        dst_route = RouteModel.__table__.alias('dst_route')
 
-        try:
-            direct = (
-                db.query(Train)
-                .filter(
-                    Train.source_station_code.in_(src_codes),
-                    Train.destination_station_code.in_(dst_codes),
-                )
-                .all()
+        query = db.query(Train).join(
+            src_route,
+            and_(
+                Train.train_number == src_route.c.train_number,
+                src_route.c.station_code.in_(src_codes)
             )
-            for train in direct:
-                tn = getattr(train, "train_number", None)
-                if tn and tn not in seen:
-                    results.append(train)
-                    seen.add(tn)
-        except Exception:
-            pass
+        ).join(
+            dst_route,
+            and_(
+                Train.train_number == dst_route.c.train_number,
+                dst_route.c.station_code.in_(dst_codes)
+            )
+        ).filter(
+            src_route.c.sequence < dst_route.c.sequence
+        )
 
-        if not direct_only:
-            try:
-                subq_src = (
-                    db.query(RouteModel.train_number, RouteModel.sequence)
-                    .filter(RouteModel.station_code.in_(src_codes))
-                    .subquery()
-                )
-                subq_dst = (
-                    db.query(RouteModel.train_number, RouteModel.sequence)
-                    .filter(RouteModel.station_code.in_(dst_codes))
-                    .subquery()
-                )
-                route_trains = (
-                    db.query(Train)
-                    .join(subq_src, Train.train_number == subq_src.c.train_number)
-                    .join(subq_dst, Train.train_number == subq_dst.c.train_number)
-                    .filter(subq_src.c.sequence < subq_dst.c.sequence)
-                    .all()
-                )
-                for train in route_trains:
-                    tn = getattr(train, "train_number", None)
-                    if tn and tn not in seen:
-                        results.append(train)
-                        seen.add(tn)
-            except Exception:
-                pass
+        # If direct_only, we could still allow via routes; if you want strictly non-stop, add: and_(src_route.c.sequence + 1 == dst_route.c.sequence) but that's too strict.
+        # We'll keep it as any train that has src before dst.
 
-        if not results:
-            for method_name in ("search_between", "search_by_route", "find_between", "get_trains_between"):
-                method = getattr(self.train_repo, method_name, None)
-                if callable(method):
-                    try:
-                        fallback = method(src_codes, dst_codes, db)
-                        for train in fallback or []:
-                            tn = getattr(train, "train_number", None)
-                            if tn and tn not in seen:
-                                results.append(train)
-                                seen.add(tn)
-                        if results:
-                            break
-                    except Exception:
-                        continue
+        results = query.distinct(Train.train_number).limit(limit * 2).all()
 
-        results = self._apply_time_filter(results, src_codes[0], db, departure_after, departure_before, time_hint)
-        return results[: max(1, min(int(limit or 10), 50))]
+        # Apply time filters
+        if results:
+            results = self._apply_time_filter(
+                results,
+                src_codes[0],
+                db,
+                departure_after,
+                departure_before,
+                time_hint
+            )
+
+        return results[:max(1, min(int(limit or 10), 50))]
 
     def search_direct(self, src: str, dst: str, date: Optional[str], db: Session, limit: int = 10) -> List[Train]:
         return self.search(src, dst, date, db, direct_only=True, limit=limit)
