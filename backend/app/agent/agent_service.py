@@ -35,10 +35,10 @@ HF_MODEL_NAME = "meta-llama/Llama-3.1-8B-Instruct"
 SUPPORTED_CLASSES = ["GN", "2S", "SL", "CC", "3A", "2A", "1A", "EC"]
 
 # ---- Optimized defaults for free tier ----
-DEFAULT_TIMEOUT_SECONDS = 10          # was 25
-DEFAULT_MAX_TOOL_ITERATIONS = 2       # was 3
-DEFAULT_MAX_HISTORY_TURNS = 2         # keep only last user+assistant turn
-DEFAULT_MAX_OUTPUT_TOKENS = 250       # was 900
+DEFAULT_TIMEOUT_SECONDS = 10
+DEFAULT_MAX_TOOL_ITERATIONS = 2
+DEFAULT_MAX_HISTORY_TURNS = 2
+DEFAULT_MAX_OUTPUT_TOKENS = 250
 DEFAULT_TEMPERATURE = 0.25
 DEFAULT_RETRIES = 2
 
@@ -169,7 +169,8 @@ class AgentService:
         self._remember_last_turn(session_id, user_message, answer)
         return answer
 
-    # ---------------- memory helpers ----------------
+    # ---------- Memory helpers ----------
+    # (These are unchanged; refer to the previous version)
 
     def _get_or_create_memory(self, session_id: str, user_id: Optional[int]) -> Any:
         store = self.session_store
@@ -309,7 +310,6 @@ class AgentService:
             logger.warning("[agent] remember-selected failed: %s", exc)
 
     def _remember_context(self, session_id: str, parsed: ParsedRequest) -> None:
-        """Store context (source, destination, class, date, etc.) even if answer not complete."""
         payload = {
             "source": parsed.source,
             "destination": parsed.destination,
@@ -340,7 +340,6 @@ class AgentService:
             logger.warning("[agent] remember-context failed: %s", exc)
 
     def _build_context(self, conversation_history: List[Dict[str, str]], interpretation: QueryInterpretation, memory: Any) -> ConversationContext:
-        """Assemble ConversationContext from interpretation and session memory."""
         slots = getattr(interpretation, "slots", None) or None
         def mem_attr(name: str):
             try:
@@ -368,7 +367,6 @@ class AgentService:
         )
 
     def _parsed_from_interpretation(self, interpretation: QueryInterpretation, memory: Any, raw_text: str) -> ParsedRequest:
-        """Convert QueryInterpretation + memory into ParsedRequest for handlers."""
         slots = getattr(interpretation, "slots", None)
         mem = self._memory_to_dict(memory)
         direct_only = False
@@ -398,7 +396,7 @@ class AgentService:
             raw=raw_text or getattr(interpretation, "raw_text", ""),
         )
 
-    # ---------------- local handling (fallback) ----------------
+    # ---------- Local handlers (fallback) ----------
 
     def _handle_locally(
         self,
@@ -409,8 +407,6 @@ class AgentService:
         memory: Any,
     ) -> Optional[str]:
         intent = parsed.intent
-
-        # Store context early so follow-ups can use it
         self._remember_context(session_id, parsed)
 
         if intent == "greeting":
@@ -468,7 +464,7 @@ class AgentService:
 
             trains = self._search_trains(parsed, tools)
             if not trains:
-                return f"😔 No trains found from **{src}** to **{dst}**. Please check the station names or try nearby stations."
+                return f"😔 No trains found from **{src}** to **{dst}**. Try using station codes or nearby major cities."
 
             ranked = self._rank_trains(trains, parsed, src, dst)
             self._remember_selected_results(session_id, parsed, ranked, selected_index=parsed.selected_option_index or 0)
@@ -519,14 +515,35 @@ class AgentService:
             if not (src and dst):
                 return "Please tell me the source and destination first so I can estimate fare."
 
+        # If no train number, try to find a train
         trains = self._search_trains(parsed, tools) if not train_number else []
         if not train_number and trains:
             ranked = self._rank_trains(trains, parsed, src, dst)
-            self._remember_selected_results(session_id, parsed, ranked, selected_index=parsed.selected_option_index or 0)
-            train_number = ranked[0].get("train_number") if ranked else None
+            if ranked:
+                self._remember_selected_results(session_id, parsed, ranked, selected_index=0)
+                train_number = ranked[0].get("train_number")
+                # If still missing, try to get from original train data
+                if not train_number and trains:
+                    first_train = trains[0]
+                    train_number = first_train.get("train_number") if isinstance(first_train, dict) else getattr(first_train, "train_number", None)
 
         if not train_number:
-            return f"I could not find a suitable train from **{src}** to **{dst}** for fare estimation."
+            # Try to find any train that passes through both stations (fallback)
+            train_number = self._find_any_train_between(src, dst, tools.db)
+            if train_number:
+                logger.info("[fare] Found fallback train %s for %s→%s", train_number, src, dst)
+            else:
+                # No train found – fallback to corridor distance estimate
+                fare_est = self._estimate_fare_by_distance(src, dst, travel_class or "SL", pax)
+                if fare_est:
+                    return (
+                        f"💰 **Approximate Fare Estimate** ({src} → {dst})\n"
+                        f"Class: **{travel_class or 'SL'}**\n"
+                        f"Per passenger: **₹{fare_est['per_passenger']:,.0f}**\n"
+                        f"Total ({pax} pax): **₹{fare_est['total']:,.0f}**\n"
+                        "_Estimated based on corridor distance (no direct train found)._"
+                    )
+                return f"I could not find a suitable train from **{src}** to **{dst}** for fare estimation. Try using station codes or nearby cities."
 
         fare = self._safe_tool_json(
             self._invoke_compat(
@@ -547,6 +564,51 @@ class AgentService:
         if travel_class and travel_class != "ALL":
             return self._format_single_fare(fare, src, dst, pax)
         return self._format_fare_table(fare, src, dst, pax)
+
+    def _find_any_train_between(self, src: str, dst: str, db: Session) -> Optional[str]:
+        """Find any train that has both stations in its route (uses routes table)."""
+        from app.models.train_models import Route
+        try:
+            subq_src = db.query(Route.train_number).filter(Route.station_code == src).subquery()
+            subq_dst = db.query(Route.train_number).filter(Route.station_code == dst).subquery()
+            trains = db.query(Route.train_number).filter(
+                Route.train_number.in_(subq_src),
+                Route.train_number.in_(subq_dst)
+            ).distinct().limit(5).all()
+            if trains:
+                return trains[0][0]
+        except Exception as e:
+            logger.warning("Fallback train search failed: %s", e)
+        return None
+
+    def _estimate_fare_by_distance(self, src: str, dst: str, travel_class: str, passengers: int) -> Optional[Dict[str, float]]:
+        """Fallback: estimate fare using corridor distances from FareCalculator."""
+        try:
+            from app.services.fare_calculator import FareCalculator
+            calc = FareCalculator()
+            corridor = getattr(calc, 'CORRIDOR_DISTANCES', {})
+            key = (src.upper(), dst.upper())
+            distance = corridor.get(key)
+            if not distance:
+                key_rev = (dst.upper(), src.upper())
+                distance = corridor.get(key_rev)
+            if distance is None:
+                return None
+            breakdown = calc.calculate(
+                travel_class=travel_class,
+                distance_km=distance,
+                passengers=passengers,
+                source_code=src,
+                dest_code=dst,
+            )
+            return {
+                "per_passenger": breakdown.per_passenger,
+                "total": breakdown.total_fare,
+                "distance_km": distance,
+            }
+        except Exception as e:
+            logger.warning("Distance fallback failed: %s", e)
+            return None
 
     def _handle_booking_query(self, parsed: ParsedRequest, tools: AgentTools, context: ConversationContext, session_id: str, memory: Any) -> Optional[str]:
         src = parsed.source or context.source
@@ -572,16 +634,32 @@ class AgentService:
 
         trains = self._search_trains(parsed, tools)
         if not trains:
-            return f"I could not find any trains from **{src}** to **{dst}** for booking."
+            return f"I could not find any trains from **{src}** to **{dst}** for booking. Try using station codes or nearby cities."
 
         ranked = self._rank_trains(trains, parsed, src, dst)
         if not ranked:
-            return "I found route data, but I could not choose a train to book."
-        self._remember_selected_results(session_id, parsed, ranked, selected_index=parsed.selected_option_index or 0)
+            return "I found route data, but I could not choose a train to book. Please try a different route."
 
-        train_number = ranked[0].get("train_number")
+        # Ensure we have a valid train_number
+        train_number = None
+        for candidate in ranked:
+            tn = candidate.get("train_number") if isinstance(candidate, dict) else getattr(candidate, "train_number", None)
+            if tn:
+                train_number = tn
+                break
+
         if not train_number:
-            return "I found trains, but the selected train number is missing in the available data."
+            # Fallback: try to get from original trains list
+            for train in trains:
+                tn = train.get("train_number") if isinstance(train, dict) else getattr(train, "train_number", None)
+                if tn:
+                    train_number = tn
+                    break
+
+        if not train_number:
+            return "I found trains, but the train number is missing in the available data. Please try specifying a train number."
+
+        self._remember_selected_results(session_id, parsed, ranked, selected_index=0)
 
         book = self._safe_tool_json(
             self._invoke_compat(
@@ -601,6 +679,8 @@ class AgentService:
             return self._friendly_tool_error("booking", book)
         return self._format_booking_confirmation(book)
 
+    # ---------- Helper methods (search, rank, format) ----------
+
     def _search_trains(self, parsed: ParsedRequest, tools: AgentTools) -> List[Dict[str, Any]]:
         raw = self._safe_tool_json(
             self._invoke_compat(
@@ -612,7 +692,7 @@ class AgentService:
                 departure_before=parsed.departure_before or "",
                 time_hint=parsed.time_hint or "",
                 direct_only=parsed.direct_only,
-                limit=parsed.limit or 5,   # default 5
+                limit=parsed.limit or 5,
             )
         )
         trains = raw.get("trains") or raw.get("results") or []
@@ -747,12 +827,11 @@ class AgentService:
                 raise
 
     def _build_messages(self, user_message: str, history: List[Dict[str, str]], context: ConversationContext) -> List[Dict[str, Any]]:
-        """Build messages for LLM with compressed history."""
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         if any([context.source, context.destination, context.train_number, context.travel_class, context.time_hint]):
             messages.append({"role": "system", "content": f"Context: {self._context_summary(context)}"})
 
-        # Keep only the last user and assistant messages (most recent turn)
+        # Keep only the last user and assistant messages
         last_user = None
         last_assistant = None
         for item in reversed(history):
@@ -772,7 +851,6 @@ class AgentService:
         return messages
 
     def _build_tool_schemas(self, tools: Sequence[Any]) -> List[Dict[str, Any]]:
-        # Not used in current approach (we rely on system prompt)
         return []
 
     def _get_tool_args_schema(self, tool: Any) -> Dict[str, Any]:
@@ -792,98 +870,7 @@ class AgentService:
             return {"status": "ok", "result": raw}
         return {"status": "ok", "result": raw}
 
-    def _extract_stations_fallback(self, text: str) -> Tuple[Optional[str], Optional[str]]:
-        m = re.search(r"from\s+([a-zA-Z\s]{2,40})\s+to\s+([a-zA-Z\s]{2,40})", text)
-        if m:
-            return self._resolve_station_alias(m.group(1)), self._resolve_station_alias(m.group(2))
-        m = re.search(r"between\s+([a-zA-Z\s]{2,40})\s+and\s+([a-zA-Z\s]{2,40})", text)
-        if m:
-            return self._resolve_station_alias(m.group(1)), self._resolve_station_alias(m.group(2))
-        return None, None
-
-    def _resolve_station_alias(self, text: str) -> Optional[str]:
-        cleaned = self._normalize_text(text)
-        if cleaned in self.query_understanding.station_aliases:
-            return self.query_understanding.station_aliases[cleaned]
-        for alias, code in self.query_understanding.station_aliases.items():
-            if alias in cleaned:
-                return code
-        return cleaned.upper()[:5] if cleaned else None
-
-    def _guess_station_from_text(self, text: str) -> Optional[str]:
-        return self._resolve_station_alias(text) if text else None
-
-    def _extract_train_number(self, text: str) -> Optional[str]:
-        return self.query_understanding.interpret(text).slots.train_number
-
-    def _extract_class(self, text: str) -> Optional[str]:
-        for alias, code in sorted(self.query_understanding.class_aliases.items(), key=lambda item: -len(item[0])):
-            if alias in text:
-                return code
-        return None
-
-    def _extract_passengers(self, text: str) -> Optional[int]:
-        m = re.search(r"\b(\d+)\s*(?:\w+\s+)?(?:passenger|pax|ticket|seat|person|people|traveller|traveler)s?\b", text, re.I)
-        if m:
-            return int(m.group(1))
-        for word, value in self.query_understanding.NUM_WORDS.items():
-            if re.search(rf"\b{word}\b", text, re.I):
-                return value
-        return None
-
-    def _extract_date(self, text: str) -> Optional[str]:
-        today = datetime.now().date()
-        if "today" in text:
-            return today.isoformat()
-        if "tomorrow" in text:
-            return (today + timedelta(days=1)).isoformat()
-        if "day after tomorrow" in text:
-            return (today + timedelta(days=2)).isoformat()
-        ymd = re.search(r"\b(20\d{2})[-/](\d{1,2})[-/](\d{1,2})\b", text)
-        if ymd:
-            y, m, d = map(int, ymd.groups())
-            try:
-                return datetime(y, m, d).date().isoformat()
-            except Exception:
-                return None
-        dmy = re.search(r"\b(\d{1,2})/(\d{1,2})/(20\d{2})\b", text)
-        if dmy:
-            d, m, y = map(int, dmy.groups())
-            try:
-                return datetime(y, m, d).date().isoformat()
-            except Exception:
-                return None
-        return None
-
-    def _extract_time_hint(self, text: str) -> Optional[str]:
-        if "morning" in text or "early" in text:
-            return "morning"
-        if "afternoon" in text or "noon" in text:
-            return "afternoon"
-        if "evening" in text:
-            return "evening"
-        if "night" in text or "tonight" in text or "overnight" in text:
-            return "night"
-        m = re.search(r"\b(?:at|after|before)?\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b", text, re.I)
-        if m:
-            hh = int(m.group(1))
-            mm = int(m.group(2) or 0)
-            ap = m.group(3).lower()
-            if ap == "pm" and hh != 12:
-                hh += 12
-            if ap == "am" and hh == 12:
-                hh = 0
-            return f"{hh:02d}:{mm:02d}"
-        return None
-
-    def _extract_sort_hint(self, text: str) -> Optional[str]:
-        if any(x in text for x in ("cheapest", "lowest fare", "sort by fare", "budget")):
-            return "fare"
-        if any(x in text for x in ("fastest", "least time", "shortest journey", "sort by time")):
-            return "duration"
-        if any(x in text for x in ("fewest stops", "least stops", "fewer stops")):
-            return "stops"
-        return None
+    # ---------- Formatting helpers ----------
 
     def _format_train_search(self, src: str, dst: str, trains: List[Dict[str, Any]], parsed: ParsedRequest, multi: bool = False) -> str:
         if not trains:
@@ -1112,7 +1099,7 @@ class AgentService:
             "• Book 2 sleeper seats from Bangalore to Mangalore tomorrow"
         )
 
-    # ---------------- LLM agent loop ----------------
+    # ---------- LLM agent loop ----------
 
     def _run_tool_agent(
         self,
@@ -1123,10 +1110,6 @@ class AgentService:
         parsed: ParsedRequest,
         session_id: str,
     ) -> Optional[str]:
-        """
-        Run the LLM tool-calling agent with robust error handling.
-        Uses a prompt that instructs the LLM to output JSON for tool calls.
-        """
         if not self.allow_llm or not self.hf_token:
             return None
 
@@ -1165,38 +1148,31 @@ class AgentService:
 
                 logger.info("[agent] LLM response: %s", assistant_message[:200])
 
-                # Parse tool call from the response
                 tool_call = self._parse_tool_call(assistant_message, tool_map)
                 if tool_call:
                     tool_name, tool_args = tool_call
                     logger.info("[agent] Tool call: %s with args: %s", tool_name, tool_args)
 
-                    # Validate tool exists
                     tool = tool_map.get(tool_name)
                     if not tool:
                         messages.append({"role": "assistant", "content": assistant_message})
                         messages.append({"role": "user", "content": f"Error: Tool '{tool_name}' not found. Please use one of: {list(tool_map.keys())}."})
                         continue
 
-                    # Invoke tool
                     result = self._invoke_tool(tool, tool_args)
                     logger.info("[agent] Tool result: %s", str(result)[:200])
 
-                    # Store in memory if it's a train search
                     if tool_name == "search_trains" and result.get("status") == "ok":
                         trains = result.get("trains", [])
                         if trains:
                             self._remember_selected_results(session_id, parsed, trains, selected_index=0)
 
-                    # Add assistant's JSON and tool result to conversation
                     messages.append({"role": "assistant", "content": assistant_message})
                     messages.append({"role": "user", "content": f"Tool result: {json.dumps(result, ensure_ascii=False)}"})
                     continue
                 else:
-                    # No tool call – this is the final answer
                     return assistant_message
 
-            # If we exit the loop without returning, it means we exceeded max iterations
             return "I'm sorry, I couldn't complete your request in the allowed number of steps."
 
         except requests.exceptions.Timeout:
@@ -1213,14 +1189,6 @@ class AgentService:
             return None
 
     def _parse_tool_call(self, text: str, tool_map: Dict[str, Any]) -> Optional[Tuple[str, Dict[str, Any]]]:
-        """
-        Parse a tool call from the LLM's response.
-        Expects JSON in one of these formats:
-        - {"tool": "search_trains", "args": {"source": "Delhi", "destination": "Mumbai"}}
-        - ```json\n{"tool": "search_trains", "args": {...}}\n```
-        - Any JSON object containing "tool" and "args" keys.
-        """
-        # Try to find JSON within a code block
         json_match = re.search(r'```json\s*(\{.*?\})\s*```', text, re.DOTALL)
         if json_match:
             try:
@@ -1230,7 +1198,6 @@ class AgentService:
             except json.JSONDecodeError:
                 pass
 
-        # Try to find a raw JSON object
         json_match = re.search(r'(\{"tool"\s*:\s*"[^"]+"\s*,\s*"args"\s*:\s*\{.*?\}\s*\})', text, re.DOTALL)
         if json_match:
             try:
@@ -1240,7 +1207,6 @@ class AgentService:
             except json.JSONDecodeError:
                 pass
 
-        # Fallback: try to parse the entire text as JSON
         try:
             data = json.loads(text.strip())
             if "tool" in data and "args" in data and isinstance(data["args"], dict):
