@@ -155,8 +155,108 @@ class AgentService:
         self._remember_last_turn(session_id, user_message, answer)
         return answer
 
-    # ---------------- memory helpers ----------------
+    # ============ NEW: LLM agent methods ============
+    def _run_tool_agent(
+        self,
+        user_message: str,
+        conversation_history: List[Dict[str, str]],
+        context: ConversationContext,
+        tools: AgentTools,
+    ) -> Optional[str]:
+        try:
+            tool_list = tools.build()
+            messages = self._build_messages(user_message, conversation_history, context)
+            tool_schemas = self._build_tool_schemas(tool_list)
+            tool_map = self._build_tool_map(tool_list)
 
+            for _ in range(self.max_tool_iterations):
+                llm_message = self._call_llm(messages, tool_schemas)
+                if not llm_message:
+                    return None
+
+                content = (llm_message.get("content") or "")
+                tool_calls = llm_message.get("tool_calls") or []
+                if not tool_calls:
+                    final = self._sanitize_output(content)
+                    return final or None
+
+                messages.append({"role": "assistant", "content": content, "tool_calls": tool_calls})
+
+                for tc in tool_calls:
+                    tool_name = tc.get("function", {}).get("name", "")
+                    raw_args = tc.get("function", {}).get("arguments", "{}")
+                    tc_id = tc.get("id", f"call_{tool_name}")
+                    parsed_args = self._safe_json_loads(raw_args)
+
+                    if tool_name not in tool_map:
+                        tool_result = {"status": "error", "message": f"Unknown tool: {tool_name}"}
+                    else:
+                        try:
+                            tool_result = self._invoke_tool(tool_map[tool_name], parsed_args)
+                        except Exception as exc:
+                            logger.exception("[agent] tool failed: %s", tool_name)
+                            tool_result = {"status": "error", "message": f"Tool {tool_name} failed: {exc}"}
+
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": tc_id,
+                            "content": json.dumps(tool_result, ensure_ascii=False),
+                        }
+                    )
+
+            return None
+        except Exception as exc:
+            logger.exception("[agent] tool agent failure: %s", exc)
+            return None
+
+    def _call_llm(
+        self,
+        messages: List[Dict[str, Any]],
+        tools: List[Dict[str, Any]],
+    ) -> Optional[Dict[str, Any]]:
+        payload = {
+            "model": HF_MODEL_NAME,
+            "messages": messages,
+            "tools": tools,
+            "tool_choice": "auto",
+            "max_tokens": self.max_output_tokens,
+            "temperature": self.temperature,
+            "stream": False,
+        }
+        headers = {
+            "Authorization": f"Bearer {self.hf_token}",
+            "Content-Type": "application/json",
+        }
+
+        for attempt in range(self.retries + 1):
+            try:
+                resp = requests.post(HF_API_URL, headers=headers, json=payload, timeout=self.timeout)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    choice = (data.get("choices") or [{}])[0]
+                    message = choice.get("message") or {}
+                    # 🔥 Fix: ensure role is present
+                    if "role" not in message:
+                        message["role"] = "assistant"
+                    return message
+                if resp.status_code == 429:
+                    time.sleep(min(8, 2 * (attempt + 1)))
+                    continue
+                if resp.status_code in (500, 502, 503, 504):
+                    time.sleep(min(4, attempt + 1))
+                    continue
+                logger.error("[agent] hf error status=%d body=%s", resp.status_code, resp.text[:400])
+                return None
+            except requests.Timeout:
+                if attempt >= self.retries:
+                    return None
+            except Exception as exc:
+                logger.exception("[agent] hf request exception: %s", exc)
+                return None
+        return None
+
+    # ============ Memory methods (unchanged) ============
     def _get_or_create_memory(self, session_id: str, user_id: Optional[int]) -> Any:
         store = self.session_store
         if hasattr(store, "get_or_create"):
