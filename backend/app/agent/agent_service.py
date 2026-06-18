@@ -299,6 +299,68 @@ class AgentService:
                     return val
         return {}
 
+    def _build_context(self, conversation_history: List[Dict[str, Any]], interpretation: QueryInterpretation, memory: Any) -> ConversationContext:
+        """Build ConversationContext from interpretation slots and session memory.
+
+        Preference order: explicit slots from interpretation -> memory values -> resolved entities.
+        """
+        slots = interpretation.slots
+
+        def mem(attr: str):
+            try:
+                return getattr(memory, attr)
+            except Exception:
+                return None
+
+        ctx = ConversationContext(
+            source=slots.source or mem("source") or (interpretation.resolved_entities or {}).get("source"),
+            destination=slots.destination or mem("destination") or (interpretation.resolved_entities or {}).get("destination"),
+            train_number=slots.train_number or mem("train_number"),
+            travel_class=slots.travel_class or mem("travel_class"),
+            passengers=slots.passengers or mem("passengers"),
+            travel_date=slots.travel_date or mem("travel_date"),
+            time_hint=slots.time_hint or mem("time_hint"),
+            departure_after=slots.departure_after or mem("departure_after"),
+            departure_before=slots.departure_before or mem("departure_before"),
+            sort_by=slots.sort_by or mem("sort_by"),
+            limit=slots.limit or mem("limit"),
+            booking_id=slots.booking_id or mem("booking_id"),
+            station=slots.station or mem("station"),
+            preference=slots.preference or mem("preference"),
+            intent=interpretation.intent,
+            budget_max=slots.budget_max or mem("budget_max"),
+            selected_option_index=slots.selected_option_index or mem("selected_option_index"),
+        )
+
+        return ctx
+
+    def _parsed_from_interpretation(self, interpretation: QueryInterpretation, memory: Any, raw_text: str) -> ParsedRequest:
+        """Convert QueryInterpretation + memory into a ParsedRequest used by handlers."""
+        slots = interpretation.slots
+        parsed = ParsedRequest(
+            intent=interpretation.intent,
+            source=slots.source or (getattr(memory, "source", None) if memory else None),
+            destination=slots.destination or (getattr(memory, "destination", None) if memory else None),
+            train_number=slots.train_number or (getattr(memory, "train_number", None) if memory else None),
+            travel_class=slots.travel_class or (getattr(memory, "travel_class", None) if memory else None),
+            passengers=slots.passengers or (getattr(memory, "passengers", None) if memory else None),
+            travel_date=slots.travel_date or (getattr(memory, "travel_date", None) if memory else None),
+            time_hint=slots.time_hint or (getattr(memory, "time_hint", None) if memory else None),
+            departure_after=slots.departure_after or (getattr(memory, "departure_after", None) if memory else None),
+            departure_before=slots.departure_before or (getattr(memory, "departure_before", None) if memory else None),
+            sort_by=slots.sort_by or (getattr(memory, "sort_by", None) if memory else None),
+            limit=slots.limit or (getattr(memory, "limit", None) if memory else None),
+            booking_id=slots.booking_id or (getattr(memory, "booking_id", None) if memory else None),
+            station=slots.station or (getattr(memory, "station", None) if memory else None),
+            preference=slots.preference or (getattr(memory, "preference", None) if memory else None),
+            budget_max=slots.budget_max or (getattr(memory, "budget_max", None) if memory else None),
+            selected_option_index=slots.selected_option_index or (getattr(memory, "selected_option_index", None) if memory else None),
+            raw=raw_text,
+        )
+        # direct_only derived from sub-intents
+        parsed.direct_only = bool("direct_only" in getattr(interpretation, "sub_intents", []))
+        return parsed
+
     def _update_memory_from_interpretation(self, session_id: str, interpretation: QueryInterpretation, memory: Any) -> None:
         s = interpretation.slots
         payload = {

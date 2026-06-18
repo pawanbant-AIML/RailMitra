@@ -1,0 +1,12 @@
+2026-06-18 11:32:43.437 | INFO     | app.agent.tools:search_trains:206 - [tool:search_trains] %s → %s date=%s after=%s before=%s hint=%s
+2026-06-18 11:32:43.451 | INFO     | app.agent.tools:search_trains:206 - [tool:search_trains] %s → %s date=%s after=%s before=%s hint=%s
+2026-06-18 11:32:43.458 | INFO     | app.agent.tools:search_trains:206 - [tool:search_trains] %s → %s date=%s after=%s before=%s hint=%s
+2026-06-18 11:32:43.464 | INFO     | app.agent.tools:book_ticket:362 - [tool:book_ticket] %s→%s cls=%s pax=%s date=%s
+2026-06-18 11:32:43.492 | INFO     | app.agent.tools:get_booking_history:427 - [tool:get_booking_history] user=%s
+2026-06-18 11:32:43.492 | INFO     | app.agent.tools:cancel_booking:408 - [tool:cancel_booking] id=%s
+2026-06-18 11:32:43.506 | INFO     | app.agent.tools:get_station_info:450 - [tool:get_station_info] %s → %s
+2026-06-18 11:32:43.513 | INFO     | app.agent.agent_service:run:128 - [agent] incoming=%r
+2026-06-18 11:32:43.762 | INFO     | app.agent.agent_service:run:128 - [agent] incoming=%r
+2026-06-18 11:32:43.792 | INFO     | app.agent.agent_service:run:128 - [agent] incoming=%r
+2026-06-18 11:32:43.826 | INFO     | app.agent.agent_service:run:128 - [agent] incoming=%r
+2026-06-18 11:32:43.988 | INFO     | app.agent.agent_service:run:128 - [agent] incoming=%r
