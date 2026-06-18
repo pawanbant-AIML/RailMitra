@@ -292,6 +292,13 @@ class QueryUnderstanding:
         return text
 
     def _detect_intent(self, text: str, previous_result: Optional[Dict[str, Any]] = None) -> str:
+        # First check for cancellation – this should take priority
+        if any(kw in text for kw in ("cancel booking", "cancel my booking", "cancel ticket", "cancel reservation", "cancellation")):
+            return "booking_cancel"
+        # Also if text starts with "cancel" and has a number, it's likely a cancellation
+        if re.search(r'\bcancel\s+#?\d+', text):
+            return "booking_cancel"
+
         if previous_result and previous_result.get("clarification_needed"):
             if len(text.split()) <= 5 and previous_result.get("intent") in {"booking_create", "fare_query", "train_search", "route_query", "multi_intent"}:
                 return previous_result["intent"]
@@ -508,8 +515,20 @@ class QueryUnderstanding:
         return self.preferred_max_results
 
     def _extract_booking_id(self, text: str) -> Optional[str]:
-        m = re.search(r"\b(?:pnr|booking\s*(?:id|no\.?|number)?)\s*[:#-]?\s*([a-z0-9]{4,12})\b", text, re.I)
-        return m.group(1).upper() if m else None
+        # Try common patterns first
+        patterns = [
+            r"(?:booking\s*(?:id|no\.?|number)?|pnr)\s*[:#-]?\s*([a-z0-9]{4,12})\b",
+            r"(?:id|#)\s*(\d{1,6})\b",                          # #17, id 17
+            r"\bcancel\s+#?(\d+)\b",                           # cancel 17, cancel #17
+            r"\bbooking\s+#?(\d+)\b",                          # booking 17, booking #17
+            r"\b(?:cancel|cancellation)\s+(?:booking\s+)?#?(\d+)",  # cancel booking 17
+            r"\b(?:my\s+)?booking\s+#?(\d+)",                  # my booking 17
+        ]
+        for pat in patterns:
+            m = re.search(pat, text, re.IGNORECASE)
+            if m:
+                return m.group(1).upper()
+        return None
 
     def _extract_station_only(self, text: str) -> Optional[str]:
         if re.search(r"(?:station|railway station|junction)", text, re.I):
