@@ -1,8 +1,5 @@
 """
 agent/tools.py — LangChain-compatible tool definitions for RailMitra.
-
-This version adds time-aware search and booking parameters so the agent can
-handle requests like "after 8 PM", "evening train", and "overnight train".
 """
 
 from __future__ import annotations
@@ -141,19 +138,23 @@ class AgentTools:
         self.recommendation_engine = RecommendationEngine()
 
     def _resolve(self, name: str) -> str:
+        """Resolve a station name or code to a station code, prioritizing the database."""
         if not name:
             return ""
         raw = str(name).strip()
+        # First, try the station repository (database) for fuzzy matching
         try:
             code = self.station_repo.fuzzy_find_station(raw, self.db)
             if code:
                 return str(code).upper()
         except Exception:
             pass
+        # Fallback to hardcoded aliases
         lowered = raw.lower()
         for alias, code in _STATION_ALIASES.items():
             if alias in lowered:
                 return code
+        # Last resort: uppercase and return as-is
         return raw.upper()
 
     def _parse_time(self, value: str) -> Optional[str]:
@@ -175,7 +176,6 @@ class AgentTools:
         destination = getattr(train, "destination_station_code", None)
         train_name = getattr(train, "train_name", "")
 
-        # Try to get departure/arrival times from route repo if not present on train object
         departure = getattr(train, "departure_time", None) or getattr(train, "departure", None)
         arrival = getattr(train, "arrival_time", None) or getattr(train, "arrival", None)
 
@@ -188,7 +188,6 @@ class AgentTools:
         if stops_count is None and train_number:
             stops_count = self.route_repo.get_stop_count(train_number, self.db)
 
-        # Fallback to "Data not available" for missing fields
         def safe_str(value: Any, default: str = "Data not available") -> str:
             if value is None:
                 return default
@@ -215,7 +214,7 @@ class AgentTools:
         departure_before: str = "",
         time_hint: str = "",
         direct_only: bool = False,
-        limit: int = 5,                 # default 5 instead of 10
+        limit: int = 5,                 # default 5 to reduce token usage
     ) -> str:
         try:
             src_code = self._resolve(source)
@@ -230,7 +229,7 @@ class AgentTools:
                 departure_before=self._parse_time(departure_before) or None,
                 time_hint=time_hint or None,
                 direct_only=direct_only,
-                limit=max(1, min(int(limit or 10), 50)),
+                limit=max(1, min(int(limit or 5), 50)),
             )
             if not trains:
                 return json.dumps({
@@ -239,7 +238,7 @@ class AgentTools:
                     "source_resolved": src_code,
                     "destination_resolved": dst_code,
                 }, ensure_ascii=False)
-            result = [self._train_to_payload(t) for t in trains[: max(1, min(int(limit or 10), 50))]]
+            result = [self._train_to_payload(t) for t in trains[: max(1, min(int(limit or 5), 50))]]
             return json.dumps({
                 "status": "ok",
                 "count": len(trains),
