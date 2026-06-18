@@ -169,24 +169,41 @@ class AgentTools:
         return v
 
     def _train_to_payload(self, train: Any) -> Dict[str, Any]:
+        """Convert a Train ORM object to a dictionary, fetching route data if missing."""
         train_number = getattr(train, "train_number", None)
         source = getattr(train, "source_station_code", None)
         destination = getattr(train, "destination_station_code", None)
-        route_dep = self.route_repo.get_departure_time(train_number, source, self.db) if train_number and source else None
-        route_arr = self.route_repo.get_arrival_time(train_number, destination, self.db) if train_number and destination else None
+        train_name = getattr(train, "train_name", "")
+
+        # Try to get departure/arrival times from route repo if not present on train object
+        departure = getattr(train, "departure_time", None) or getattr(train, "departure", None)
+        arrival = getattr(train, "arrival_time", None) or getattr(train, "arrival", None)
+
+        if train_number and source and departure is None:
+            departure = self.route_repo.get_departure_time(train_number, source, self.db)
+        if train_number and destination and arrival is None:
+            arrival = self.route_repo.get_arrival_time(train_number, destination, self.db)
+
         stops_count = getattr(train, "stops", None) or getattr(train, "total_stops", None)
         if stops_count is None and train_number:
             stops_count = self.route_repo.get_stop_count(train_number, self.db)
+
+        # Fallback to "Data not available" for missing fields
+        def safe_str(value: Any, default: str = "Data not available") -> str:
+            if value is None:
+                return default
+            return str(value)
+
         return {
-            "train_number": train_number,
-            "train_name": getattr(train, "train_name", ""),
-            "from": source,
-            "to": destination,
-            "departure": getattr(train, "departure_time", None) or route_dep,
-            "arrival": getattr(train, "arrival_time", None) or route_arr,
-            "duration": getattr(train, "duration", None) or getattr(train, "journey_time", None),
-            "stops": stops_count,
-            "note": getattr(train, "note", None) or "",
+            "train_number": safe_str(train_number),
+            "train_name": safe_str(train_name),
+            "from": safe_str(source),
+            "to": safe_str(destination),
+            "departure": safe_str(departure, "--:--"),
+            "arrival": safe_str(arrival, "--:--"),
+            "duration": safe_str(getattr(train, "duration", None) or getattr(train, "journey_time", None), "N/A"),
+            "stops": stops_count if stops_count is not None else "N/A",
+            "note": safe_str(getattr(train, "note", None) or ""),
         }
 
     def search_trains(
