@@ -169,7 +169,13 @@ class AgentService:
             previous_result=previous_result,
         )
         self._update_memory_from_interpretation(session_id, interpretation, memory)
-        context = self._build_context(conversation_history, interpretation, memory)
+
+        if getattr(interpretation, "clarification_needed", False) and not self._is_contextual_follow_up(cleaned_message):
+            answer = interpretation.clarification_question or self._fallback_help_message()
+            self._remember_last_turn(session_id, user_message, answer)
+            return answer
+
+        context = self._build_context(conversation_history, interpretation, memory, cleaned_message)
         parsed = self._parsed_from_interpretation(interpretation, memory, cleaned_message)
 
         tools = AgentTools(db)
@@ -362,36 +368,44 @@ class AgentService:
         except Exception as exc:
             logger.warning("[agent] remember-context failed: %s", exc)
 
-    def _build_context(self, conversation_history: List[Dict[str, str]], interpretation: QueryInterpretation, memory: Any) -> ConversationContext:
+    def _build_context(self, conversation_history: List[Dict[str, str]], interpretation: QueryInterpretation, memory: Any, user_message: str = "") -> ConversationContext:
         slots = getattr(interpretation, "slots", None) or None
-        def mem_attr(name: str):
-            try:
-                return getattr(memory, name)
-            except Exception:
-                return None
+        mem = self._memory_to_dict(memory)
+        follow_up = self._is_contextual_follow_up(user_message)
+
+        def pick(slot_name: str, memory_name: Optional[str] = None):
+            value = getattr(slots, slot_name, None)
+            if value not in (None, "", []):
+                return value
+            if follow_up:
+                key = memory_name or slot_name
+                mem_value = mem.get(key)
+                if mem_value not in (None, "", []):
+                    return mem_value
+            return None
+
         return ConversationContext(
-            source = getattr(slots, 'source', None) or mem_attr('source'),
-            destination = getattr(slots, 'destination', None) or mem_attr('destination'),
-            train_number = getattr(slots, 'train_number', None) or mem_attr('train_number'),
-            travel_class = getattr(slots, 'travel_class', None) or mem_attr('travel_class'),
-            passengers = getattr(slots, 'passengers', None) or mem_attr('passengers'),
-            travel_date = getattr(slots, 'travel_date', None) or mem_attr('travel_date'),
-            time_hint = getattr(slots, 'time_hint', None) or mem_attr('time_hint'),
-            departure_after = getattr(slots, 'departure_after', None) or mem_attr('departure_after'),
-            departure_before = getattr(slots, 'departure_before', None) or mem_attr('departure_before'),
-            sort_by = getattr(slots, 'sort_by', None) or mem_attr('sort_by'),
-            limit = getattr(slots, 'limit', None) or mem_attr('limit'),
-            booking_id = getattr(slots, 'booking_id', None) or mem_attr('booking_id'),
-            station = getattr(slots, 'station', None) or mem_attr('station'),
-            preference = getattr(slots, 'preference', None) or mem_attr('preference'),
-            intent = getattr(interpretation, 'intent', None),
-            budget_max = getattr(slots, 'budget_max', None) or mem_attr('budget_max'),
-            selected_option_index = getattr(slots, 'selected_option_index', None) or mem_attr('selected_option_index'),
+            source=pick('source'),
+            destination=pick('destination'),
+            train_number=pick('train_number'),
+            travel_class=pick('travel_class'),
+            passengers=pick('passengers'),
+            travel_date=pick('travel_date'),
+            time_hint=pick('time_hint'),
+            departure_after=pick('departure_after'),
+            departure_before=pick('departure_before'),
+            sort_by=pick('sort_by'),
+            limit=pick('limit'),
+            booking_id=pick('booking_id'),
+            station=pick('station'),
+            preference=pick('preference'),
+            intent=getattr(interpretation, 'intent', None),
+            budget_max=pick('budget_max'),
+            selected_option_index=pick('selected_option_index'),
         )
 
     def _parsed_from_interpretation(self, interpretation: QueryInterpretation, memory: Any, raw_text: str) -> ParsedRequest:
         slots = getattr(interpretation, "slots", None)
-        mem = self._memory_to_dict(memory)
         direct_only = False
         try:
             direct_only = "direct_only" in (interpretation.sub_intents or [])
@@ -399,23 +413,23 @@ class AgentService:
             direct_only = False
         return ParsedRequest(
             intent=getattr(interpretation, "intent", "train_search"),
-            source=getattr(slots, "source", None) or mem.get("source"),
-            destination=getattr(slots, "destination", None) or mem.get("destination"),
-            train_number=getattr(slots, "train_number", None) or mem.get("train_number"),
-            travel_class=getattr(slots, "travel_class", None) or mem.get("travel_class"),
-            passengers=getattr(slots, "passengers", None) or mem.get("passengers"),
-            travel_date=getattr(slots, "travel_date", None) or mem.get("travel_date"),
-            time_hint=getattr(slots, "time_hint", None) or mem.get("time_hint"),
-            departure_after=getattr(slots, "departure_after", None) or mem.get("departure_after"),
-            departure_before=getattr(slots, "departure_before", None) or mem.get("departure_before"),
-            sort_by=getattr(slots, "sort_by", None) or mem.get("sort_by"),
-            limit=getattr(slots, "limit", None) or mem.get("limit"),
-            booking_id=getattr(slots, "booking_id", None) or mem.get("booking_id"),
-            station=getattr(slots, "station", None) or mem.get("station"),
-            preference=getattr(slots, "preference", None) or mem.get("preference"),
-            budget_max=getattr(slots, "budget_max", None) or mem.get("budget_max"),
+            source=getattr(slots, "source", None),
+            destination=getattr(slots, "destination", None),
+            train_number=getattr(slots, "train_number", None),
+            travel_class=getattr(slots, "travel_class", None),
+            passengers=getattr(slots, "passengers", None),
+            travel_date=getattr(slots, "travel_date", None),
+            time_hint=getattr(slots, "time_hint", None),
+            departure_after=getattr(slots, "departure_after", None),
+            departure_before=getattr(slots, "departure_before", None),
+            sort_by=getattr(slots, "sort_by", None),
+            limit=getattr(slots, "limit", None),
+            booking_id=getattr(slots, "booking_id", None),
+            station=getattr(slots, "station", None),
+            preference=getattr(slots, "preference", None),
+            budget_max=getattr(slots, "budget_max", None),
             direct_only=bool(direct_only),
-            selected_option_index=getattr(slots, "selected_option_index", None) or mem.get("selected_option_index"),
+            selected_option_index=getattr(slots, "selected_option_index", None),
             raw=raw_text or getattr(interpretation, "raw_text", ""),
         )
 
@@ -478,9 +492,19 @@ class AgentService:
             dst = parsed.destination or context.destination
 
             if not (src and dst):
-                if intent in {"fare_query", "multi_intent"} and not self._memory_previous_result(memory):
-                    return "Please tell me the source and destination first so I can help with that."
-                return self._clarify_missing_route(parsed.raw)
+                prev = self._memory_previous_result(memory)
+                if self._is_contextual_follow_up(parsed.raw) and prev:
+                    route_ctx = self._previous_route_context(prev)
+                    src = src or route_ctx.get("source")
+                    dst = dst or route_ctx.get("destination")
+                    parsed.train_number = parsed.train_number or route_ctx.get("train_number")
+                    parsed.travel_class = parsed.travel_class or route_ctx.get("travel_class")
+                    parsed.passengers = parsed.passengers or route_ctx.get("passengers")
+                    parsed.travel_date = parsed.travel_date or route_ctx.get("travel_date")
+                if not (src and dst):
+                    if intent in {"fare_query", "multi_intent"} and not prev:
+                        return "Please tell me the source and destination first so I can help with that."
+                    return self._clarify_missing_route(parsed.raw)
 
             parsed.source = src
             parsed.destination = dst
@@ -539,10 +563,13 @@ class AgentService:
 
         if not src or not dst:
             prev = self._memory_previous_result(memory)
-            if not prev:
-                return "Please tell me the source and destination first so I can estimate fare."
-            src = src or prev.get("entities", {}).get("source")
-            dst = dst or prev.get("entities", {}).get("destination")
+            if self._is_contextual_follow_up(parsed.raw) and prev:
+                route_ctx = self._previous_route_context(prev)
+                src = src or route_ctx.get("source")
+                dst = dst or route_ctx.get("destination")
+                train_number = train_number or route_ctx.get("train_number")
+                travel_class = travel_class or route_ctx.get("travel_class")
+                pax = pax or route_ctx.get("passengers") or 1
             if not (src and dst):
                 return "Please tell me the source and destination first so I can estimate fare."
 
@@ -597,6 +624,17 @@ class AgentService:
             pax = context.passengers
         travel_class = parsed.travel_class or context.travel_class
         travel_date = parsed.travel_date or context.travel_date or self._default_travel_date()
+
+        if (not src or not dst) and self._is_contextual_follow_up(parsed.raw):
+            prev = self._memory_previous_result(memory)
+            if prev:
+                route_ctx = self._previous_route_context(prev)
+                src = src or route_ctx.get("source")
+                dst = dst or route_ctx.get("destination")
+                travel_class = travel_class or route_ctx.get("travel_class")
+                if pax is None:
+                    pax = route_ctx.get("passengers")
+                travel_date = parsed.travel_date or route_ctx.get("travel_date") or travel_date
 
         missing = []
         if not src:
@@ -892,6 +930,53 @@ class AgentService:
             if value not in (None, "", []):
                 parts.append(f"{key}={value}")
         return "; ".join(parts) if parts else "none"
+
+
+    def _is_contextual_follow_up(self, text: str) -> bool:
+        normalized = self._normalize_text(text)
+        cues = (
+            "what about fare",
+            "fare for it",
+            "cheapest one",
+            "fastest one",
+            "best one",
+            "first one",
+            "second one",
+            "third one",
+            "book it",
+            "book the first one",
+            "book that",
+            "that train",
+            "this train",
+            "same train",
+            "route of it",
+            "route for it",
+            "show route",
+            "show fare",
+            "compare",
+            "price of it",
+        )
+        return any(cue in normalized for cue in cues) or bool(re.search(r"(first|second|third|that|this|it)", normalized))
+
+    def _previous_route_context(self, previous_result: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        if not previous_result:
+            return {}
+        entities = previous_result.get("entities") or {}
+        results = previous_result.get("results") or previous_result.get("trains") or []
+        selected_train_number = previous_result.get("selected_train_number")
+        if not selected_train_number and isinstance(results, list) and results:
+            first = results[0]
+            if isinstance(first, dict):
+                selected_train_number = first.get("train_number") or first.get("train_no")
+        return {
+            "source": entities.get("source"),
+            "destination": entities.get("destination"),
+            "travel_date": entities.get("date") or entities.get("travel_date"),
+            "travel_class": entities.get("travel_class"),
+            "passengers": entities.get("passengers"),
+            "train_number": selected_train_number,
+            "selected_option_index": previous_result.get("selected_option_index"),
+        }
 
     # ---------- Formatting helpers ----------
     def _format_train_search(self, src: str, dst: str, trains: List[Dict[str, Any]], parsed: ParsedRequest, multi: bool = False) -> str:
