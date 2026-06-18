@@ -25,10 +25,31 @@ type BookingFormValues = {
   travel_class: string;
   passenger_count: string;
   train_number: string;
+  manual_train_number: string;
   time_preference: string;
   budget: string;
   direct_only: boolean;
 };
+
+const MANUAL_TRAIN_VALUE = '__manual__';
+
+const TRAVEL_CLASS_OPTIONS = [
+  { value: '', label: 'Select a class' },
+  { value: 'SL', label: 'SL — Sleeper' },
+  { value: '2S', label: '2S — Second Seating' },
+  { value: 'CC', label: 'CC — AC Chair Car' },
+  { value: '3A', label: '3A — AC 3 Tier' },
+  { value: '2A', label: '2A — AC 2 Tier' },
+  { value: '1A', label: '1A — AC First Class' },
+  { value: '3E', label: '3E — AC 3 Tier Economy' },
+  { value: 'EC', label: 'EC — Executive Chair Car' },
+  { value: 'FC', label: 'FC — First Class' },
+];
+
+const PASSENGER_COUNT_OPTIONS = Array.from({ length: 9 }, (_, index) => {
+  const count = String(index + 1);
+  return { value: count, label: count };
+});
 
 const EMPTY_VALUES: BookingFormValues = {
   source: '',
@@ -37,6 +58,7 @@ const EMPTY_VALUES: BookingFormValues = {
   travel_class: '',
   passenger_count: '',
   train_number: '',
+  manual_train_number: '',
   time_preference: '',
   budget: '',
   direct_only: false,
@@ -57,16 +79,29 @@ function buildInitialValues(draft?: schemas.BookingDraft | null): BookingFormVal
     travel_class: toText(draft.travel_class),
     passenger_count: toText(draft.passenger_count),
     train_number: toText(draft.train_number),
+    manual_train_number: '',
     time_preference: toText(draft.time_preference),
     budget: toText(draft.budget),
     direct_only: Boolean(draft.direct_only),
   };
 }
 
-function inputClass(hasError: boolean) {
+function fieldClass(hasError: boolean) {
   return [
-    'w-full rounded-lg border px-3 py-2 text-sm outline-none transition bg-white',
-    hasError ? 'border-red-400 focus:border-red-500' : 'border-slate-300 focus:border-slate-900',
+    'w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors',
+    'bg-white text-slate-900 placeholder:text-slate-400',
+    'border-slate-300 focus:border-slate-900 focus:ring-2 focus:ring-slate-200',
+    'dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500',
+    'dark:border-slate-700 dark:focus:border-slate-400 dark:focus:ring-slate-800',
+    hasError ? 'border-red-400 focus:border-red-500 dark:border-red-500 dark:focus:border-red-400' : '',
+  ].join(' ');
+}
+
+function selectClass(hasError: boolean) {
+  return [
+    fieldClass(hasError),
+    'pr-10',
+    'appearance-none',
   ].join(' ');
 }
 
@@ -83,11 +118,11 @@ function Field({
 }) {
   return (
     <label className="block space-y-1.5">
-      <span className="text-sm font-medium text-slate-700">
-        {label} {required ? <span className="text-red-600">*</span> : null}
+      <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+        {label} {required ? <span className="text-red-600 dark:text-red-400">*</span> : null}
       </span>
       {children}
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
     </label>
   );
 }
@@ -106,6 +141,7 @@ export default function BookingDrawer({
     travel_class: false,
     passenger_count: false,
     train_number: false,
+    manual_train_number: false,
     time_preference: false,
     budget: false,
     direct_only: false,
@@ -122,12 +158,34 @@ export default function BookingDrawer({
       travel_class: false,
       passenger_count: false,
       train_number: false,
+      manual_train_number: false,
       time_preference: false,
       budget: false,
       direct_only: false,
     });
     setSubmitAttempted(false);
   }, [open, bookingDraft]);
+
+  const trainOptions = useMemo(() => {
+    const options: Array<{ value: string; label: string }> = [
+      { value: '', label: 'Select a train' },
+    ];
+
+    const suggestedTrain = bookingDraft?.train_number?.trim();
+    if (suggestedTrain) {
+      options.push({
+        value: suggestedTrain,
+        label: suggestedTrain,
+      });
+    }
+
+    options.push({
+      value: MANUAL_TRAIN_VALUE,
+      label: suggestedTrain ? 'Enter another train number' : 'Enter train number manually',
+    });
+
+    return options;
+  }, [bookingDraft]);
 
   const errors = useMemo(() => {
     const next: Partial<Record<keyof BookingFormValues, string>> = {};
@@ -136,6 +194,12 @@ export default function BookingDrawer({
     if (!values.destination.trim()) next.destination = 'Destination is required.';
     if (!values.travel_date.trim()) next.travel_date = 'Travel date is required.';
     if (!values.travel_class.trim()) next.travel_class = 'Travel class is required.';
+
+    if (!values.train_number.trim()) {
+      next.train_number = 'Train selection is required.';
+    } else if (values.train_number === MANUAL_TRAIN_VALUE && !values.manual_train_number.trim()) {
+      next.manual_train_number = 'Train number is required.';
+    }
 
     if (!values.passenger_count.trim()) {
       next.passenger_count = 'Passenger count is required.';
@@ -170,13 +234,18 @@ export default function BookingDrawer({
 
     if (!onSubmit || !isValid) return;
 
+    const finalTrainNumber =
+      values.train_number === MANUAL_TRAIN_VALUE
+        ? values.manual_train_number.trim()
+        : values.train_number.trim();
+
     await onSubmit({
       source: values.source.trim(),
       destination: values.destination.trim(),
       travel_date: values.travel_date.trim(),
       travel_class: values.travel_class.trim(),
       passenger_count: Number(values.passenger_count),
-      train_number: values.train_number.trim() || undefined,
+      train_number: finalTrainNumber || undefined,
       time_preference: values.time_preference.trim() || undefined,
       budget: values.budget.trim() ? Number(values.budget) : undefined,
       direct_only: values.direct_only,
@@ -184,6 +253,8 @@ export default function BookingDrawer({
   };
 
   if (!open) return null;
+
+  const isManualTrainEntry = values.train_number === MANUAL_TRAIN_VALUE;
 
   return (
     <div className="fixed inset-0 z-50">
@@ -194,16 +265,18 @@ export default function BookingDrawer({
         onClick={() => onOpenChange(false)}
       />
 
-      <div className="absolute right-0 top-0 h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b px-6 py-4">
+      <div className="absolute right-0 top-0 h-full w-full max-w-xl overflow-y-auto border-l border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Booking form</h2>
-            <p className="text-sm text-slate-500">Review and complete the details from chat.</p>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Booking form</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Review and complete the details from chat.
+            </p>
           </div>
 
           <button
             type="button"
-            className="rounded-md px-3 py-2 text-sm text-slate-600 hover:bg-slate-100"
+            className="rounded-md px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
             onClick={() => onOpenChange(false)}
           >
             Close
@@ -216,7 +289,7 @@ export default function BookingDrawer({
               value={values.source}
               onChange={(e) => setField('source', e.target.value)}
               onBlur={() => setTouched((prev) => ({ ...prev, source: true }))}
-              className={inputClass(showError('source'))}
+              className={fieldClass(showError('source'))}
               placeholder="e.g. Bangalore"
             />
           </Field>
@@ -230,7 +303,7 @@ export default function BookingDrawer({
               value={values.destination}
               onChange={(e) => setField('destination', e.target.value)}
               onBlur={() => setTouched((prev) => ({ ...prev, destination: true }))}
-              className={inputClass(showError('destination'))}
+              className={fieldClass(showError('destination'))}
               placeholder="e.g. Chennai"
             />
           </Field>
@@ -245,7 +318,7 @@ export default function BookingDrawer({
               value={values.travel_date}
               onChange={(e) => setField('travel_date', e.target.value)}
               onBlur={() => setTouched((prev) => ({ ...prev, travel_date: true }))}
-              className={inputClass(showError('travel_date'))}
+              className={fieldClass(showError('travel_date'))}
             />
           </Field>
 
@@ -254,13 +327,60 @@ export default function BookingDrawer({
             required
             error={showError('travel_class') ? errors.travel_class : undefined}
           >
-            <input
+            <select
               value={values.travel_class}
               onChange={(e) => setField('travel_class', e.target.value)}
               onBlur={() => setTouched((prev) => ({ ...prev, travel_class: true }))}
-              className={inputClass(showError('travel_class'))}
-              placeholder="e.g. SL, 3A, 2A"
-            />
+              className={selectClass(showError('travel_class'))}
+            >
+              {TRAVEL_CLASS_OPTIONS.map((option) => (
+                <option key={option.value || 'placeholder'} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <Field
+            label="Train selection"
+            required
+            error={
+              showError('train_number')
+                ? errors.train_number
+                : showError('manual_train_number')
+                  ? errors.manual_train_number
+                  : undefined
+            }
+          >
+            <select
+              value={values.train_number}
+              onChange={(e) => {
+                setField('train_number', e.target.value);
+                if (e.target.value !== MANUAL_TRAIN_VALUE) {
+                  setField('manual_train_number', '');
+                }
+              }}
+              onBlur={() => setTouched((prev) => ({ ...prev, train_number: true }))}
+              className={selectClass(showError('train_number') || showError('manual_train_number'))}
+            >
+              {trainOptions.map((option) => (
+                <option key={option.value || 'placeholder'} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+
+            {isManualTrainEntry ? (
+              <div className="pt-3">
+                <input
+                  value={values.manual_train_number}
+                  onChange={(e) => setField('manual_train_number', e.target.value)}
+                  onBlur={() => setTouched((prev) => ({ ...prev, manual_train_number: true }))}
+                  className={fieldClass(showError('manual_train_number'))}
+                  placeholder="Enter train number"
+                />
+              </div>
+            ) : null}
           </Field>
 
           <Field
@@ -268,38 +388,32 @@ export default function BookingDrawer({
             required
             error={showError('passenger_count') ? errors.passenger_count : undefined}
           >
-            <input
-              type="number"
-              min={1}
-              step={1}
+            <select
               value={values.passenger_count}
               onChange={(e) => setField('passenger_count', e.target.value)}
               onBlur={() => setTouched((prev) => ({ ...prev, passenger_count: true }))}
-              className={inputClass(showError('passenger_count'))}
-              placeholder="1"
-            />
+              className={selectClass(showError('passenger_count'))}
+            >
+              <option value="">Select passengers</option>
+              {PASSENGER_COUNT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </Field>
 
-          <details className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-            <summary className="cursor-pointer text-sm font-medium text-slate-700">
+          <details className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/40">
+            <summary className="cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-200">
               Optional details
             </summary>
 
             <div className="mt-4 space-y-5">
-              <Field label="Train number">
-                <input
-                  value={values.train_number}
-                  onChange={(e) => setField('train_number', e.target.value)}
-                  className={inputClass(false)}
-                  placeholder="Optional"
-                />
-              </Field>
-
               <Field label="Time preference">
                 <input
                   value={values.time_preference}
                   onChange={(e) => setField('time_preference', e.target.value)}
-                  className={inputClass(false)}
+                  className={fieldClass(false)}
                   placeholder="Morning, evening, 18:00, etc."
                 />
               </Field>
@@ -312,27 +426,27 @@ export default function BookingDrawer({
                   value={values.budget}
                   onChange={(e) => setField('budget', e.target.value)}
                   onBlur={() => setTouched((prev) => ({ ...prev, budget: true }))}
-                  className={inputClass(showError('budget'))}
+                  className={fieldClass(showError('budget'))}
                   placeholder="Optional"
                 />
               </Field>
 
-              <label className="flex items-center gap-3 text-sm text-slate-700">
+              <label className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-200">
                 <input
                   type="checkbox"
                   checked={values.direct_only}
                   onChange={(e) => setField('direct_only', e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300"
+                  className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-300 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
                 />
                 Direct trains only
               </label>
             </div>
           </details>
 
-          <div className="flex items-center justify-end gap-3 border-t pt-4">
+          <div className="flex items-center justify-end gap-3 border-t border-slate-200 pt-4 dark:border-slate-800">
             <button
               type="button"
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               onClick={() => onOpenChange(false)}
             >
               Cancel
@@ -341,14 +455,14 @@ export default function BookingDrawer({
             <button
               type="submit"
               disabled={!onSubmit || !isValid}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
             >
               Submit booking
             </button>
           </div>
 
           {!onSubmit ? (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               This drawer is ready for a submit handler from the parent component.
             </p>
           ) : null}
