@@ -1,102 +1,122 @@
 """
 api/v1/endpoints/chat.py
 
-Refactored chat endpoint that routes every user message through the
-AI Agent (agent_service.AgentService).  The old rule-based ChatNLPService
-is removed from the hot path; it is still available at /chat/analyze for
-debugging / backward compatibility.
+Chat endpoint for RailAI.
+
+This version accepts the new frontend request shape:
+
+{
+  "message": "Which is cheapest?",
+  "session_id": "abc123",
+  "history": [...]
+}
+
+It converts the provided history into the structure expected by the agent,
+passes the current message + history + session_id to AgentService.run(),
+and returns the full chat list with the assistant reply appended.
+
+Legacy / debugging NLP route is kept at /chat/analyze.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from __future__ import annotations
+
 from typing import List, Optional
 
-from pydantic import BaseModel
-from app.models import schemas
-from app.services.chat_nlp_service import ChatNLPService, ChatAnalysisRequest
-from app.api.v1.dependencies import get_db
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
+
 from app.agent.agent_service import AgentService
+from app.api.v1.dependencies import get_db
 from app.core.logger import logger
+from app.models import schemas
+from app.services.chat_nlp_service import ChatAnalysisRequest, ChatNLPService
 
 router = APIRouter()
 
-# Singletons – constructed once at startup, thread-safe for read-only state
+# Singletons — safe for stateless use
 _chat_nlp = ChatNLPService()
 _agent_svc = AgentService()
 
 
-# ---------------------------------------------------------------------------
-# New request model matching frontend
-# ---------------------------------------------------------------------------
 class ChatRequest(BaseModel):
-    message: str
-    session_id: Optional[str] = None
-    history: Optional[List[schemas.ChatMessage]] = None
+    """
+    New request format expected from the frontend.
+    """
+    message: str = Field(..., min_length=1)
+    session_id: Optional[str] = Field(default=None)
+    history: Optional[List[schemas.ChatMessage]] = Field(default_factory=list)
 
 
-# ---------------------------------------------------------------------------
-# Debug endpoint: run the legacy NLP analyser (kept for dev / testing)
-# ---------------------------------------------------------------------------
 @router.post("/chat/analyze")
 def analyze_chat(request: ChatAnalysisRequest):
     """
-    Legacy rule-based intent analyser.
-    Returns structured intent, entities, and next_action.
-    Useful for debugging what the old NLP layer detected.
+    Legacy rule-based analyser, kept for debugging/backward compatibility.
     """
     return _chat_nlp.analyze(request)
 
 
-# ---------------------------------------------------------------------------
-# Primary chat endpoint
-# ---------------------------------------------------------------------------
 @router.post("/chat", response_model=List[schemas.ChatMessage])
 def chat_endpoint(
     request: ChatRequest,
     db: Session = Depends(get_db),
 ):
     """
-    Main conversational endpoint.
+    Main chat endpoint.
 
-    Accepts a ChatRequest with `message`, `session_id`, and optional
-    `history` (list of previous messages).  Routes the user's message through
-    the LLM agent, which may call multiple tools before producing a final reply.
+    Accepts:
+      - message: current user message
+      - session_id: conversation/session identifier
+      - history: previous messages from the frontend
 
-    Returns the full messages list with the assistant reply appended.
+    Returns:
+      - full message list (previous history + current user message + assistant reply)
     """
-    if not request.message.strip():
+    message = (request.message or "").strip()
+    if not message:
         raise HTTPException(status_code=400, detail="Message cannot be empty.")
 
-    # Build conversation history from the frontend-provided list (if any)
-    history = [
-        {"role": m.role, "content": m.content}
-        for m in (request.history or [])
-        if m.role in ("user", "assistant") and m.content
-    ]
+    session_id = (request.session_id or "default").strip() or "default"
+
+    # Build conversation history for the agent
+    conversation_history = []
+    for item in request.history or []:
+        if not item:
+            continue
+        role = (item.role or "").strip()
+        content = (item.content or "").strip()
+        if role in {"user", "assistant"} and content:
+            conversation_history.append(
+                {
+                    "role": role,
+                    "content": content,
+                }
+            )
 
     logger.info(
-        f"[chat] session={request.session_id} "
-        f"user_msg={request.message[:100]!r}  "
-        f"history_turns={len(history)}"
+        "[chat] session=%s user_msg=%r history_turns=%d",
+        session_id,
+        message[:120],
+        len(conversation_history),
     )
 
     try:
         reply = _agent_svc.run(
-            user_message=request.message,
-            conversation_history=history,
+            user_message=message,
+            conversation_history=conversation_history,
             db=db,
-            session_id=request.session_id or "default",
+            session_id=session_id,
         )
     except Exception as exc:
-        logger.error(f"[chat] Agent error: {exc}", exc_info=True)
+        logger.error("[chat] Agent error: %s", exc, exc_info=True)
         reply = (
             "⚠️ Sorry, I ran into an unexpected error. "
             "Please try again or rephrase your question."
         )
 
-    # Build response: all previous messages (if provided) + the new reply
-    response_messages = list(request.history) if request.history else []
-    response_messages.append(schemas.ChatMessage(role="user", content=request.message))
+    # Return the updated chat list
+    response_messages: List[schemas.ChatMessage] = list(request.history or [])
+    response_messages.append(schemas.ChatMessage(role="user", content=message))
     response_messages.append(schemas.ChatMessage(role="assistant", content=reply))
 
     return response_messages
