@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../api';
 import ChatWindow from '../components/ChatWindow';
 
@@ -24,6 +24,12 @@ const WELCOME: ChatMessage = {
 const ChatAssistant: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
   const [loading,  setLoading]  = useState(false);
+  const [sessionId, setSessionId] = useState<string>('');
+
+  // Generate a unique session ID once when component mounts
+  useEffect(() => {
+    setSessionId(crypto.randomUUID());
+  }, []);
 
   const sendMessage = async (text: string) => {
     const newHistory: ChatMessage[] = [...messages, { role: 'user', content: text }];
@@ -31,7 +37,14 @@ const ChatAssistant: React.FC = () => {
     setLoading(true);
 
     try {
-      const resp = await api.post<ChatMessage[]>('/chat', newHistory);
+      // ✅ Now sends proper JSON with session_id and history
+      const resp = await api.post('/chat', {
+        message: text,
+        session_id: sessionId,
+        history: messages,            // previous messages (before this user message)
+      });
+
+      // The backend returns the full updated conversation list
       setMessages(resp.data);
     } catch (err: any) {
       const detail =
