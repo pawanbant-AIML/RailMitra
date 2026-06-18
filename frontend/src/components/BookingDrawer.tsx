@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { searchTrains } from '../api';
 import type { schemas } from '../types';
 
 export interface BookingDrawerProps {
@@ -25,13 +26,27 @@ type BookingFormValues = {
   travel_class: string;
   passenger_count: string;
   train_number: string;
-  manual_train_number: string;
   time_preference: string;
   budget: string;
   direct_only: boolean;
 };
 
-const MANUAL_TRAIN_VALUE = '__manual__';
+type TrainOption = {
+  value: string;
+  label: string;
+};
+
+const EMPTY_VALUES: BookingFormValues = {
+  source: '',
+  destination: '',
+  travel_date: '',
+  travel_class: '',
+  passenger_count: '',
+  train_number: '',
+  time_preference: '',
+  budget: '',
+  direct_only: false,
+};
 
 const TRAVEL_CLASS_OPTIONS = [
   { value: '', label: 'Select a class' },
@@ -51,19 +66,6 @@ const PASSENGER_COUNT_OPTIONS = Array.from({ length: 9 }, (_, index) => {
   return { value: count, label: count };
 });
 
-const EMPTY_VALUES: BookingFormValues = {
-  source: '',
-  destination: '',
-  travel_date: '',
-  travel_class: '',
-  passenger_count: '',
-  train_number: '',
-  manual_train_number: '',
-  time_preference: '',
-  budget: '',
-  direct_only: false,
-};
-
 function toText(value: unknown): string {
   if (value === null || value === undefined) return '';
   return String(value);
@@ -79,7 +81,6 @@ function buildInitialValues(draft?: schemas.BookingDraft | null): BookingFormVal
     travel_class: toText(draft.travel_class),
     passenger_count: toText(draft.passenger_count),
     train_number: toText(draft.train_number),
-    manual_train_number: '',
     time_preference: toText(draft.time_preference),
     budget: toText(draft.budget),
     direct_only: Boolean(draft.direct_only),
@@ -98,11 +99,7 @@ function fieldClass(hasError: boolean) {
 }
 
 function selectClass(hasError: boolean) {
-  return [
-    fieldClass(hasError),
-    'pr-10',
-    'appearance-none',
-  ].join(' ');
+  return [fieldClass(hasError), 'pr-10', 'appearance-none'].join(' ');
 }
 
 function Field({
@@ -141,15 +138,20 @@ export default function BookingDrawer({
     travel_class: false,
     passenger_count: false,
     train_number: false,
-    manual_train_number: false,
     time_preference: false,
     budget: false,
     direct_only: false,
   });
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
+  const [trainOptions, setTrainOptions] = useState<TrainOption[]>([]);
+  const [trainLoading, setTrainLoading] = useState(false);
+  const [trainMessage, setTrainMessage] = useState<string>('');
+  const requestIdRef = useRef(0);
+
   useEffect(() => {
     if (!open) return;
+
     setValues(buildInitialValues(bookingDraft));
     setTouched({
       source: false,
@@ -158,34 +160,78 @@ export default function BookingDrawer({
       travel_class: false,
       passenger_count: false,
       train_number: false,
-      manual_train_number: false,
       time_preference: false,
       budget: false,
       direct_only: false,
     });
     setSubmitAttempted(false);
+    setTrainOptions([]);
+    setTrainLoading(false);
+    setTrainMessage('');
+    requestIdRef.current += 1;
   }, [open, bookingDraft]);
 
-  const trainOptions = useMemo(() => {
-    const options: Array<{ value: string; label: string }> = [
-      { value: '', label: 'Select a train' },
-    ];
+  const sourceValue = values.source.trim();
+  const destinationValue = values.destination.trim();
+  const travelDateValue = values.travel_date.trim();
 
-    const suggestedTrain = bookingDraft?.train_number?.trim();
-    if (suggestedTrain) {
-      options.push({
-        value: suggestedTrain,
-        label: suggestedTrain,
-      });
+  useEffect(() => {
+    if (!open) return;
+
+    const hasSearchInputs = Boolean(sourceValue && destinationValue && travelDateValue);
+    const currentRequestId = ++requestIdRef.current;
+
+    if (!hasSearchInputs) {
+      setTrainOptions([]);
+      setTrainLoading(false);
+      setTrainMessage('');
+      setValues((prev) => ({
+        ...prev,
+        train_number: '',
+      }));
+      return;
     }
 
-    options.push({
-      value: MANUAL_TRAIN_VALUE,
-      label: suggestedTrain ? 'Enter another train number' : 'Enter train number manually',
-    });
+    setTrainLoading(true);
+    setTrainMessage('');
+    setTrainOptions([]);
+    setValues((prev) => ({
+      ...prev,
+      train_number: '',
+    }));
 
-    return options;
-  }, [bookingDraft]);
+    const timer = window.setTimeout(async () => {
+      try {
+        const trains = await searchTrains({
+          from_station: sourceValue,
+          to_station: destinationValue,
+        });
+
+        if (requestIdRef.current !== currentRequestId) return;
+
+        const options: TrainOption[] = (trains ?? []).map((train) => ({
+          value: train.train_number,
+          label: `${train.train_number} — ${train.train_name}`,
+        }));
+
+        setTrainOptions(options);
+
+        if (options.length === 0) {
+          setTrainMessage('No trains found for this route and date.');
+        }
+      } catch {
+        if (requestIdRef.current !== currentRequestId) return;
+        setTrainOptions([]);
+        setTrainMessage('Unable to load trains right now. Please try again.');
+      } finally {
+        if (requestIdRef.current === currentRequestId) {
+          setTrainLoading(false);
+        }
+      }
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [open, sourceValue, destinationValue, travelDateValue]);
 
   const errors = useMemo(() => {
     const next: Partial<Record<keyof BookingFormValues, string>> = {};
@@ -194,12 +240,7 @@ export default function BookingDrawer({
     if (!values.destination.trim()) next.destination = 'Destination is required.';
     if (!values.travel_date.trim()) next.travel_date = 'Travel date is required.';
     if (!values.travel_class.trim()) next.travel_class = 'Travel class is required.';
-
-    if (!values.train_number.trim()) {
-      next.train_number = 'Train selection is required.';
-    } else if (values.train_number === MANUAL_TRAIN_VALUE && !values.manual_train_number.trim()) {
-      next.manual_train_number = 'Train number is required.';
-    }
+    if (!values.train_number.trim()) next.train_number = 'Train selection is required.';
 
     if (!values.passenger_count.trim()) {
       next.passenger_count = 'Passenger count is required.';
@@ -234,18 +275,13 @@ export default function BookingDrawer({
 
     if (!onSubmit || !isValid) return;
 
-    const finalTrainNumber =
-      values.train_number === MANUAL_TRAIN_VALUE
-        ? values.manual_train_number.trim()
-        : values.train_number.trim();
-
     await onSubmit({
       source: values.source.trim(),
       destination: values.destination.trim(),
       travel_date: values.travel_date.trim(),
       travel_class: values.travel_class.trim(),
       passenger_count: Number(values.passenger_count),
-      train_number: finalTrainNumber || undefined,
+      train_number: values.train_number.trim() || undefined,
       time_preference: values.time_preference.trim() || undefined,
       budget: values.budget.trim() ? Number(values.budget) : undefined,
       direct_only: values.direct_only,
@@ -253,8 +289,6 @@ export default function BookingDrawer({
   };
 
   if (!open) return null;
-
-  const isManualTrainEntry = values.train_number === MANUAL_TRAIN_VALUE;
 
   return (
     <div className="fixed inset-0 z-50">
@@ -344,43 +378,29 @@ export default function BookingDrawer({
           <Field
             label="Train selection"
             required
-            error={
-              showError('train_number')
-                ? errors.train_number
-                : showError('manual_train_number')
-                  ? errors.manual_train_number
-                  : undefined
-            }
+            error={showError('train_number') ? errors.train_number : undefined}
           >
             <select
               value={values.train_number}
-              onChange={(e) => {
-                setField('train_number', e.target.value);
-                if (e.target.value !== MANUAL_TRAIN_VALUE) {
-                  setField('manual_train_number', '');
-                }
-              }}
+              onChange={(e) => setField('train_number', e.target.value)}
               onBlur={() => setTouched((prev) => ({ ...prev, train_number: true }))}
-              className={selectClass(showError('train_number') || showError('manual_train_number'))}
+              className={selectClass(showError('train_number'))}
+              disabled={trainLoading}
             >
+              <option value="">{trainLoading ? 'Searching trains...' : 'Select a train'}</option>
               {trainOptions.map((option) => (
-                <option key={option.value || 'placeholder'} value={option.value}>
+                <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
             </select>
-
-            {isManualTrainEntry ? (
-              <div className="pt-3">
-                <input
-                  value={values.manual_train_number}
-                  onChange={(e) => setField('manual_train_number', e.target.value)}
-                  onBlur={() => setTouched((prev) => ({ ...prev, manual_train_number: true }))}
-                  className={fieldClass(showError('manual_train_number'))}
-                  placeholder="Enter train number"
-                />
-              </div>
-            ) : null}
+            <div className="pt-2 text-sm">
+              {trainLoading ? (
+                <p className="text-slate-500 dark:text-slate-400">Searching trains...</p>
+              ) : trainMessage ? (
+                <p className="text-slate-500 dark:text-slate-400">{trainMessage}</p>
+              ) : null}
+            </div>
           </Field>
 
           <Field
