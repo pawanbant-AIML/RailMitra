@@ -1,4 +1,4 @@
-"""
+﻿"""
 agent/session_memory.py
 
 Conversation memory for RailMitra.
@@ -41,6 +41,7 @@ class ConversationMemory:
     selected_train_number: Optional[str] = None
     selected_option_index: Optional[int] = None
     previous_results: Dict[str, Any] = field(default_factory=dict)
+    previous_results_full: Dict[str, Any] = field(default_factory=dict)
     preferences: Dict[str, Any] = field(default_factory=dict)
     clarification_pending: bool = False
     clarification_question: Optional[str] = None
@@ -51,7 +52,11 @@ class ConversationMemory:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ConversationMemory":
-        return cls(**data)
+        # Tolerantly construct the dataclass from a dict that may contain extra keys
+        from dataclasses import fields as _dc_fields
+        allowed = {f.name for f in _dc_fields(cls)}
+        init_kwargs = {k: v for k, v in (data or {}).items() if k in allowed}
+        return cls(**init_kwargs)
 
 
 class SessionMemoryStore:
@@ -97,7 +102,12 @@ class SessionMemoryStore:
             if not isinstance(result, dict):
                 return memory
 
+            # Keep both compacted results (for quick context) and the full raw result
             memory.previous_results = self._compact_result(result)
+            try:
+                memory.previous_results_full = dict(result) if isinstance(result, dict) else {}
+            except Exception:
+                memory.previous_results_full = {}
 
             mapping = {
                 "source": ["source", "source_station", "origin"],
@@ -195,10 +205,11 @@ class SessionMemoryStore:
             "selected_train_number": memory.selected_train_number,
             "selected_option_index": memory.selected_option_index,
             "last_intent": memory.last_intent,
-            "preferences": dict(memory.preferences),
+            "preferences": dict(memory.preferences) if isinstance(memory.preferences, dict) else {},
             "clarification_pending": memory.clarification_pending,
             "clarification_question": memory.clarification_question,
-            "previous_results": dict(memory.previous_results),
+            "previous_results": dict(memory.previous_results) if isinstance(memory.previous_results, dict) else {},
+            "previous_results_full": dict(memory.previous_results_full) if hasattr(memory, 'previous_results_full') and isinstance(memory.previous_results_full, dict) else {},
         }
 
     def build_memory_summary(self, session_id: str) -> str:
@@ -269,7 +280,14 @@ class SessionMemoryStore:
                 try:
                     self._sessions[self._normalize_session_id(session_id)] = ConversationMemory.from_dict(data)
                 except Exception:
-                    continue
+                    # Fallback: try to pick known keys only
+                    try:
+                        from dataclasses import fields as _dc_fields
+                        allowed = {f.name for f in _dc_fields(ConversationMemory)}
+                        filtered = {k: v for k, v in (data or {}).items() if k in allowed}
+                        self._sessions[self._normalize_session_id(session_id)] = ConversationMemory(**filtered)
+                    except Exception:
+                        continue
 
     def _normalize_session_id(self, session_id: str) -> str:
         sid = (session_id or "").strip()
