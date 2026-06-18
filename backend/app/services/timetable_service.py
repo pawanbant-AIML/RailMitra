@@ -84,13 +84,11 @@ class TimetableService:
         return None
 
     def _train_departure_minutes(self, train: Train, source_code: str, db: Session) -> Optional[int]:
-        # Try to get departure from route table for this train at the source station
         tn = getattr(train, "train_number", None)
         if tn:
             dep = self.route_repo.get_departure_time(tn, source_code, db)
             if dep:
                 return self._time_to_minutes(dep)
-        # Fallback to attributes on train
         for attr in ("departure_time", "dep_time", "start_time"):
             val = getattr(train, attr, None)
             m = self._time_to_minutes(val)
@@ -173,13 +171,11 @@ class TimetableService:
         if not src_codes or not dst_codes:
             return []
 
-        # Use the route table to find all trains that have both stations in order.
-        # We join Train with two Route aliases: src_route and dst_route.
-        # Filter: src_route.station_code IN src_codes, dst_route.station_code IN dst_codes,
-        # and src_route.sequence < dst_route.sequence.
+        # Use aliases for the route table to join twice
         src_route = RouteModel.__table__.alias('src_route')
         dst_route = RouteModel.__table__.alias('dst_route')
 
+        # Build the query: trains that have a route entry for src (before) and dst (after)
         query = db.query(Train).join(
             src_route,
             and_(
@@ -196,13 +192,14 @@ class TimetableService:
             src_route.c.sequence < dst_route.c.sequence
         )
 
-        # If direct_only, we could still allow via routes; if you want strictly non-stop, add: and_(src_route.c.sequence + 1 == dst_route.c.sequence) but that's too strict.
-        # We'll keep it as any train that has src before dst.
+        # Optionally filter by direct_only (only if source and destination are adjacent? but we'll skip that for now)
+        # If direct_only is True, we could add a condition that the source and destination are consecutive stations,
+        # but that's very restrictive and rarely what users mean. We'll keep it as "has both in order".
 
         results = query.distinct(Train.train_number).limit(limit * 2).all()
 
         # Apply time filters
-        if results:
+        if results and src_codes:
             results = self._apply_time_filter(
                 results,
                 src_codes[0],
