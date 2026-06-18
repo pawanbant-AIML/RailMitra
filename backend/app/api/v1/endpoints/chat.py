@@ -9,8 +9,9 @@ debugging / backward compatibility.
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
+from pydantic import BaseModel
 from app.models import schemas
 from app.services.chat_nlp_service import ChatNLPService, ChatAnalysisRequest
 from app.api.v1.dependencies import get_db
@@ -25,9 +26,17 @@ _agent_svc = AgentService()
 
 
 # ---------------------------------------------------------------------------
+# New request model matching frontend
+# ---------------------------------------------------------------------------
+class ChatRequest(BaseModel):
+    message: str
+    session_id: Optional[str] = None
+    history: Optional[List[schemas.ChatMessage]] = None
+
+
+# ---------------------------------------------------------------------------
 # Debug endpoint: run the legacy NLP analyser (kept for dev / testing)
 # ---------------------------------------------------------------------------
-
 @router.post("/chat/analyze")
 def analyze_chat(request: ChatAnalysisRequest):
     """
@@ -41,43 +50,42 @@ def analyze_chat(request: ChatAnalysisRequest):
 # ---------------------------------------------------------------------------
 # Primary chat endpoint
 # ---------------------------------------------------------------------------
-
 @router.post("/chat", response_model=List[schemas.ChatMessage])
 def chat_endpoint(
-    messages: List[schemas.ChatMessage],
+    request: ChatRequest,
     db: Session = Depends(get_db),
 ):
     """
     Main conversational endpoint.
 
-    Accepts the full conversation history (all past messages + the current
-    user message as the last item).  Routes the user's message through the
-    LLM agent, which may call multiple tools before producing a final reply.
+    Accepts a ChatRequest with `message`, `session_id`, and optional
+    `history` (list of previous messages).  Routes the user's message through
+    the LLM agent, which may call multiple tools before producing a final reply.
 
     Returns the full messages list with the assistant reply appended.
     """
-    if not messages:
-        raise HTTPException(status_code=400, detail="Message list cannot be empty.")
+    if not request.message.strip():
+        raise HTTPException(status_code=400, detail="Message cannot be empty.")
 
-    # The last user message drives this turn
-    last_user = next((m for m in reversed(messages) if m.role == "user"), None)
-    if not last_user:
-        raise HTTPException(status_code=400, detail="No user message found in the list.")
-
-    # Build conversation history (everything before the current message)
+    # Build conversation history from the frontend-provided list (if any)
     history = [
         {"role": m.role, "content": m.content}
-        for m in messages[:-1]
+        for m in (request.history or [])
         if m.role in ("user", "assistant") and m.content
     ]
 
-    logger.info(f"[chat] user_msg={last_user.content[:100]!r}  history_turns={len(history)}")
+    logger.info(
+        f"[chat] session={request.session_id} "
+        f"user_msg={request.message[:100]!r}  "
+        f"history_turns={len(history)}"
+    )
 
     try:
         reply = _agent_svc.run(
-            user_message=last_user.content,
+            user_message=request.message,
             conversation_history=history,
             db=db,
+            session_id=request.session_id or "default",
         )
     except Exception as exc:
         logger.error(f"[chat] Agent error: {exc}", exc_info=True)
@@ -86,5 +94,9 @@ def chat_endpoint(
             "Please try again or rephrase your question."
         )
 
-    messages.append(schemas.ChatMessage(role="assistant", content=reply))
-    return messages
+    # Build response: all previous messages (if provided) + the new reply
+    response_messages = list(request.history) if request.history else []
+    response_messages.append(schemas.ChatMessage(role="user", content=request.message))
+    response_messages.append(schemas.ChatMessage(role="assistant", content=reply))
+
+    return response_messages
