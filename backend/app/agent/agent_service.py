@@ -195,7 +195,6 @@ class AgentService:
         return answer
 
     # ---------- Memory helpers ----------
-    # (Unchanged – keep as previous version)
     def _get_or_create_memory(self, session_id: str, user_id: Optional[int]) -> Any:
         store = self.session_store
         if hasattr(store, "get_or_create"):
@@ -675,6 +674,7 @@ class AgentService:
         trains = raw.get("trains") or raw.get("results") or []
         return trains if isinstance(trains, list) else []
 
+    # ---------- FIXED _rank_trains (handles objects, dicts, and nested train dicts) ----------
     def _rank_trains(self, trains: List[Dict[str, Any]], parsed: ParsedRequest, src: str, dst: str) -> List[Dict[str, Any]]:
         engine = self.recommendation_engine
         ranked: Any = None
@@ -712,23 +712,26 @@ class AgentService:
 
         out: List[Dict[str, Any]] = []
         for item in ranked:
+            # If item is already a dict, use it directly
             if isinstance(item, dict):
                 out.append(item)
-            else:
-                # If item is a Recommendation object, get the train
-                if hasattr(item, "train"):
-                    train_obj = item.train
-                else:
-                    train_obj = item
-                out.append({
-                    "train_number": getattr(train_obj, "train_number", None),
-                    "train_name": getattr(train_obj, "train_name", ""),
-                    "departure": getattr(train_obj, "departure", None) or getattr(train_obj, "departure_time", None),
-                    "arrival": getattr(train_obj, "arrival", None) or getattr(train_obj, "arrival_time", None),
-                    "duration": getattr(train_obj, "duration", None) or getattr(train_obj, "journey_time", None) or getattr(train_obj, "travel_time", None),
-                    "stops": getattr(train_obj, "stops", None) or getattr(train_obj, "total_stops", None),
-                    "fare": getattr(train_obj, "fare", None) or getattr(train_obj, "estimated_fare", None),
-                })
+                continue
+            # If item has a 'train' attribute, get the train
+            train_obj = getattr(item, "train", item)
+            # If train_obj is a dict, use it
+            if isinstance(train_obj, dict):
+                out.append(train_obj)
+                continue
+            # Otherwise, extract attributes from the object
+            out.append({
+                "train_number": getattr(train_obj, "train_number", None),
+                "train_name": getattr(train_obj, "train_name", ""),
+                "departure": getattr(train_obj, "departure", None) or getattr(train_obj, "departure_time", None),
+                "arrival": getattr(train_obj, "arrival", None) or getattr(train_obj, "arrival_time", None),
+                "duration": getattr(train_obj, "duration", None) or getattr(train_obj, "journey_time", None) or getattr(train_obj, "travel_time", None),
+                "stops": getattr(train_obj, "stops", None) or getattr(train_obj, "total_stops", None),
+                "fare": getattr(train_obj, "fare", None) or getattr(train_obj, "estimated_fare", None),
+            })
         return out[: (parsed.limit or 5)]
 
     def _fallback_rank_trains(self, trains: List[Dict[str, Any]], parsed: ParsedRequest) -> List[Dict[str, Any]]:
@@ -1075,6 +1078,11 @@ class AgentService:
             "• Book 2 sleeper seats from Bangalore to Mangalore tomorrow"
         )
 
+    def _guess_station_from_text(self, text: str) -> Optional[str]:
+        # simple fallback: if text contains a known station code (uppercase 2-5 letters)
+        match = re.search(r"\b([A-Z]{2,5})\b", text)
+        return match.group(1) if match else None
+
     # ---------- LLM agent loop ----------
     def _build_messages(self, user_message: str, history: List[Dict[str, str]], context: ConversationContext) -> List[Dict[str, Any]]:
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
@@ -1140,9 +1148,8 @@ class AgentService:
                                 trains = result.get("trains", [])
                                 if trains:
                                     self._remember_selected_results(session_id, parsed, trains, selected_index=0)
-                            # For simplicity, return the result message (the assistant will handle it)
-                            # But we need to simulate the next iteration. Better to use the requests loop.
-                            # We'll fall back to the requests method below.
+                            # Return the tool result as the final answer for simplicity
+                            return json.dumps(result, ensure_ascii=False)
                         else:
                             logger.warning(f"Tool {tool_name} not found")
                     else:
