@@ -1,14 +1,59 @@
 // frontend/src/pages/ChatAssistant.tsx
 import React, { useState, useEffect } from 'react';
-import api from '../api';
-import { postStructuredChat } from '../api';          // <-- NEW import
+import api, { postStructuredChat } from '../api';
 import ChatWindow from '../components/ChatWindow';
-import BookingDrawer from '../components/BookingDrawer'; // <-- NEW import
+import BookingDrawer from '../components/BookingDrawer';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
+
+type BookingDrawerValues = {
+  source: string;
+  destination: string;
+  travel_date: string;
+  travel_class: string;
+  passenger_count: number;
+  train_number?: string;
+  train_selection?: string;
+  time_preference?: string;
+  budget?: number;
+  direct_only?: boolean;
+};
+
+type BookingConfirmationRequest = {
+  source: string;
+  destination: string;
+  travel_date: string;
+  travel_class: string;
+  passenger_count: number;
+  train_selection: string;
+  user_id: number;
+};
+
+type BookingConfirmationResponse = {
+  success: boolean;
+  status: string;
+  message: string;
+  booking?: {
+    id: number;
+    train_number: string;
+    passenger_count: number;
+    travel_class: string;
+    travel_date: string;
+    status: string;
+    created_at: string;
+  } | null;
+  selected_train?: {
+    train_number: string;
+    train_name: string;
+    source_station_code: string;
+    destination_station_code: string;
+  } | null;
+  missing_fields?: string[];
+  errors?: string[];
+};
 
 const WELCOME: ChatMessage = {
   role: 'assistant',
@@ -29,14 +74,17 @@ const ChatAssistant: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string>('');
 
-  // Drawer state & booking draft
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [bookingDraft, setBookingDraft] = useState<any>(null);
+  const [bookingSubmitting, setBookingSubmitting] = useState(false);
 
-  // Generate a unique session ID once when component mounts
   useEffect(() => {
     setSessionId(crypto.randomUUID());
   }, []);
+
+  const appendAssistantMessage = (content: string) => {
+    setMessages((prev) => [...prev, { role: 'assistant', content }]);
+  };
 
   const sendMessage = async (text: string) => {
     const newHistory: ChatMessage[] = [...messages, { role: 'user', content: text }];
@@ -44,19 +92,16 @@ const ChatAssistant: React.FC = () => {
     setLoading(true);
 
     try {
-      // ✅ Structured chat endpoint that may return an action + booking draft
       const resp = await postStructuredChat({
         message: text,
         session_id: sessionId,
-        history: messages, // previous messages (before this user message)
+        history: messages,
       });
 
-      // Update conversation with the assistant's reply
       if (resp.messages?.length) {
         setMessages(resp.messages);
       }
 
-      // Handle "open_booking_form" action
       if (resp.action === 'open_booking_form' && resp.booking_draft) {
         setBookingDraft(resp.booking_draft);
         setDrawerOpen(true);
@@ -65,22 +110,74 @@ const ChatAssistant: React.FC = () => {
       const detail =
         err?.response?.data?.detail ||
         'Sorry, I couldn\'t reach the server. Please make sure the backend is running.';
-      setMessages(prev => [
-        ...prev,
-        { role: 'assistant', content: `❌ **Error:** ${detail}` },
-      ]);
+      appendAssistantMessage(`❌ **Error:** ${detail}`);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleBookingSubmit = async (values: BookingDrawerValues) => {
+    if (bookingSubmitting) return;
+
+    setBookingSubmitting(true);
+    try {
+      const trainSelection = (values.train_selection ?? values.train_number ?? '').trim();
+
+      const payload: BookingConfirmationRequest = {
+        source: values.source.trim(),
+        destination: values.destination.trim(),
+        travel_date: values.travel_date.trim(),
+        travel_class: values.travel_class.trim(),
+        passenger_count: values.passenger_count,
+        train_selection: trainSelection,
+        user_id: 1,
+      };
+
+      const response = await api.post<BookingConfirmationResponse>('/bookings/confirm', payload);
+      const data = response.data;
+
+      if (data.success) {
+        const bookingId = data.booking?.id;
+        const trainNumber = data.booking?.train_number || data.selected_train?.train_number || trainSelection;
+        const trainName = data.selected_train?.train_name ? ` (${data.selected_train.train_name})` : '';
+        const route = data.selected_train
+          ? ` from ${data.selected_train.source_station_code} to ${data.selected_train.destination_station_code}`
+          : '';
+
+        appendAssistantMessage(
+          `✅ ${data.message || 'Booking confirmed successfully.'} Booking #${bookingId ?? '—'} for train ${trainNumber}${trainName}${route}.`
+        );
+        setBookingDraft(null);
+        setDrawerOpen(false);
+        return;
+      }
+
+      const failureMessage =
+        data.message ||
+        data.errors?.[0] ||
+        'Sorry, the booking could not be confirmed.';
+      appendAssistantMessage(`❌ **Booking failed:** ${failureMessage}`);
+    } catch (err: any) {
+      const detail =
+        err?.response?.data?.detail ||
+        err?.response?.data?.message ||
+        'Sorry, the booking could not be confirmed right now.';
+      appendAssistantMessage(`❌ **Booking failed:** ${detail}`);
+    } finally {
+      setBookingSubmitting(false);
+    }
+  };
+
   return (
-    <div className="h-full glass flex flex-col overflow-hidden"
-         style={{ maxHeight: 'calc(100vh - 120px)' }}>
-      {/* Header */}
+    <div
+      className="h-full glass flex flex-col overflow-hidden"
+      style={{ maxHeight: 'calc(100vh - 120px)' }}
+    >
       <div className="px-5 py-4 border-b border-white/10 flex items-center gap-3 shrink-0">
-        <div className="w-9 h-9 rounded-xl bg-primary-500/20 border border-primary-500/30
-                        flex items-center justify-center text-lg">
+        <div
+          className="w-9 h-9 rounded-xl bg-primary-500/20 border border-primary-500/30
+                        flex items-center justify-center text-lg"
+        >
           💬
         </div>
         <div>
@@ -93,21 +190,15 @@ const ChatAssistant: React.FC = () => {
         </div>
       </div>
 
-      {/* Chat window fills remaining space */}
       <div className="flex-1 overflow-hidden">
         <ChatWindow messages={messages} onSend={sendMessage} loading={loading} />
       </div>
 
-      {/* Booking Drawer – opens when backend sends action: "open_booking_form" */}
       <BookingDrawer
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         bookingDraft={bookingDraft}
-        onSubmit={async (values) => {
-          console.log('Booking submit', values);
-          // Phase 2: call booking confirmation endpoint here
-          setDrawerOpen(false);
-        }}
+        onSubmit={handleBookingSubmit}
       />
     </div>
   );
