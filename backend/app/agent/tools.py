@@ -215,7 +215,7 @@ class AgentTools:
         departure_before: str = "",
         time_hint: str = "",
         direct_only: bool = False,
-        limit: int = 10,
+        limit: int = 5,                 # default 5 instead of 10
     ) -> str:
         try:
             src_code = self._resolve(source)
@@ -551,7 +551,7 @@ class AgentTools:
             departure_before: str = "",
             time_hint: str = "",
             direct_only: bool = False,
-            limit: int = 10,
+            limit: int = 5,
         ) -> str:
             return instance.search_trains(source, destination, date, departure_after, departure_before, time_hint, direct_only, limit)
 
