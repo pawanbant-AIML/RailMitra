@@ -214,7 +214,7 @@ class AgentTools:
         departure_before: str = "",
         time_hint: str = "",
         direct_only: bool = False,
-        limit: int = 5,                 # default 5 to reduce token usage
+        limit: int = 5,
     ) -> str:
         try:
             src_code = self._resolve(source)
