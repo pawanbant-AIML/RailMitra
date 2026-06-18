@@ -42,4 +42,45 @@ export namespace schemas {
     status: string;
     created_at: string;
   }
+
+  export type UiAction = 'open_booking_form';
+
+  export interface BookingDraft {
+    source?: string;
+    destination?: string;
+    travel_date?: string;
+    travel_class?: string;
+    passenger_count?: number;
+    train_number?: string;
+    time_preference?: string;
+    departure_after?: string;
+    departure_before?: string;
+    budget?: number;
+    direct_only?: boolean;
+    missing_required_fields?: string[];
+    ready_for_submit?: boolean;
+    [key: string]: unknown;
+  }
+
+  export interface ChatDiagnostics {
+    route?: string;
+    intent?: string;
+    llm_attempted?: boolean;
+    llm_used?: boolean;
+    local_handler_used?: boolean;
+    fallback_used?: boolean;
+    llm_error?: string | null;
+    local_error?: string | null;
+    http_status?: number;
+    error?: string;
+    [key: string]: unknown;
+  }
+
+  export interface StructuredChatResponse {
+    messages?: ChatMessage[];
+    action?: UiAction | string | null;
+    booking_draft?: BookingDraft | null;
+    missing_required_fields?: string[];
+    diagnostics?: ChatDiagnostics | null;
+  }
 }
