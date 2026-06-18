@@ -1,6 +1,9 @@
+// frontend/src/pages/ChatAssistant.tsx
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import { postStructuredChat } from '../api';          // <-- NEW import
 import ChatWindow from '../components/ChatWindow';
+import BookingDrawer from '../components/BookingDrawer'; // <-- NEW import
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -23,8 +26,12 @@ const WELCOME: ChatMessage = {
 
 const ChatAssistant: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
-  const [loading,  setLoading]  = useState(false);
+  const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string>('');
+
+  // Drawer state & booking draft
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [bookingDraft, setBookingDraft] = useState<any>(null);
 
   // Generate a unique session ID once when component mounts
   useEffect(() => {
@@ -37,15 +44,23 @@ const ChatAssistant: React.FC = () => {
     setLoading(true);
 
     try {
-      // ✅ Now sends proper JSON with session_id and history
-      const resp = await api.post('/chat', {
+      // ✅ Structured chat endpoint that may return an action + booking draft
+      const resp = await postStructuredChat({
         message: text,
         session_id: sessionId,
-        history: messages,            // previous messages (before this user message)
+        history: messages, // previous messages (before this user message)
       });
 
-      // The backend returns the full updated conversation list
-      setMessages(resp.data);
+      // Update conversation with the assistant's reply
+      if (resp.messages?.length) {
+        setMessages(resp.messages);
+      }
+
+      // Handle "open_booking_form" action
+      if (resp.action === 'open_booking_form' && resp.booking_draft) {
+        setBookingDraft(resp.booking_draft);
+        setDrawerOpen(true);
+      }
     } catch (err: any) {
       const detail =
         err?.response?.data?.detail ||
@@ -82,6 +97,18 @@ const ChatAssistant: React.FC = () => {
       <div className="flex-1 overflow-hidden">
         <ChatWindow messages={messages} onSend={sendMessage} loading={loading} />
       </div>
+
+      {/* Booking Drawer – opens when backend sends action: "open_booking_form" */}
+      <BookingDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        bookingDraft={bookingDraft}
+        onSubmit={async (values) => {
+          console.log('Booking submit', values);
+          // Phase 2: call booking confirmation endpoint here
+          setDrawerOpen(false);
+        }}
+      />
     </div>
   );
 };
