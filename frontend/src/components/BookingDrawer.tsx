@@ -17,6 +17,7 @@ export interface BookingDrawerProps {
     budget?: number;
     direct_only?: boolean;
   }) => void | Promise<void>;
+  submitting?: boolean;
 }
 
 type BookingFormValues = {
@@ -126,9 +127,9 @@ function Field({
 
 export default function BookingDrawer({
   open,
-  onOpenChange,
   bookingDraft,
   onSubmit,
+  submitting = false,
 }: BookingDrawerProps) {
   const [values, setValues] = useState<BookingFormValues>(() => buildInitialValues(bookingDraft));
   const [touched, setTouched] = useState<Record<keyof BookingFormValues, boolean>>({
@@ -205,6 +206,7 @@ export default function BookingDrawer({
         const trains = await searchTrains({
           from_station: sourceValue,
           to_station: destinationValue,
+          date: travelDateValue,
         });
 
         if (requestIdRef.current !== currentRequestId) return;
@@ -380,20 +382,31 @@ export default function BookingDrawer({
             required
             error={showError('train_number') ? errors.train_number : undefined}
           >
-            <select
-              value={values.train_number}
-              onChange={(e) => setField('train_number', e.target.value)}
-              onBlur={() => setTouched((prev) => ({ ...prev, train_number: true }))}
-              className={selectClass(showError('train_number'))}
-              disabled={trainLoading}
-            >
-              <option value="">{trainLoading ? 'Searching trains...' : 'Select a train'}</option>
-              {trainOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            {trainOptions.length > 0 ? (
+              <select
+                value={values.train_number}
+                onChange={(e) => setField('train_number', e.target.value)}
+                onBlur={() => setTouched((prev) => ({ ...prev, train_number: true }))}
+                className={selectClass(showError('train_number'))}
+                disabled={trainLoading}
+              >
+                <option value="">{trainLoading ? 'Searching trains...' : 'Select a train'}</option>
+                {trainOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                value={values.train_number}
+                onChange={(e) => setField('train_number', e.target.value)}
+                onBlur={() => setTouched((prev) => ({ ...prev, train_number: true }))}
+                className={fieldClass(showError('train_number'))}
+                placeholder={trainLoading ? 'Searching trains...' : 'Enter train number manually'}
+                disabled={trainLoading}
+              />
+            )}
             <div className="pt-2 text-sm">
               {trainLoading ? (
                 <p className="text-slate-500 dark:text-slate-400">Searching trains...</p>
@@ -474,10 +487,20 @@ export default function BookingDrawer({
 
             <button
               type="submit"
-              disabled={!onSubmit || !isValid}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
+              disabled={!onSubmit || !isValid || submitting}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 flex items-center gap-2"
             >
-              Submit booking
+              {submitting ? (
+                <>
+                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  </svg>
+                  Confirming...
+                </>
+              ) : (
+                'Submit booking'
+              )}
             </button>
           </div>
 

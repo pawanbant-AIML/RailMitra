@@ -22,7 +22,7 @@ const Sidebar: React.FC = () => (
       <div className="flex items-center gap-3 mb-1">
         <span className="text-2xl">🚆</span>
         <div>
-          <p className="font-bold text-white text-sm leading-tight">RailAI</p>
+          <p className="font-bold text-white text-sm leading-tight">Rail Mitra</p>
           <p className="text-xs text-primary-400">Indian Railways Assistant</p>
         </div>
       </div>

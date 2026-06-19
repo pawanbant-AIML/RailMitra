@@ -1172,7 +1172,7 @@ class AgentService:
             "compare",
             "price of it",
         )
-        return any(cue in normalized for cue in cues) or bool(re.search(r"(first|second|third|that|this|it)", normalized))
+        return any(cue in normalized for cue in cues) or bool(re.search(r"\b(first|second|third|that|this|it)\b", normalized))
 
     def _previous_route_context(self, previous_result: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         if not previous_result:

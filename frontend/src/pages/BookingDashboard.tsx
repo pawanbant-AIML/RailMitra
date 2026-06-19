@@ -14,8 +14,10 @@ interface BookingData {
 
 const BookingDashboard: React.FC = () => {
   const [bookings, setBookings] = useState<BookingData[]>([]);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
+  const [cancelError, setCancelError] = useState<string>('');
   const userId = 1; // demo user
 
   const fetchBookings = async () => {
@@ -23,9 +25,10 @@ const BookingDashboard: React.FC = () => {
     setError('');
     try {
       const resp = await api.get<BookingData[]>(`/bookings?user_id=${userId}`);
-      setBookings(resp.data);
-    } catch (e: any) {
-      setError(e?.response?.data?.detail || 'Failed to fetch bookings.');
+      setBookings(resp.data ?? []);
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { detail?: string } } };
+      setError(err?.response?.data?.detail || 'Failed to fetch bookings.');
     } finally {
       setLoading(false);
     }
@@ -34,13 +37,19 @@ const BookingDashboard: React.FC = () => {
   useEffect(() => { fetchBookings(); }, []);
 
   const cancel = async (id: number) => {
+    if (cancellingId !== null) return; // prevent double-click
+    setCancellingId(id);
+    setCancelError('');
     try {
       await api.delete(`/bookings/${id}`);
-      setBookings(prev =>
-        prev.map(b => b.id === id ? { ...b, status: 'CANCELLED' } : b)
-      );
-    } catch {
-      setError('Failed to cancel booking.');
+      // Only update state AFTER API confirms success
+      setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'CANCELLED' } : b));
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { detail?: string } }; message?: string };
+      const msg = err?.response?.data?.detail || err?.message || 'Failed to cancel booking.';
+      setCancelError(`Booking #${id}: ${msg}`);
+    } finally {
+      setCancellingId(null);
     }
   };
 
@@ -53,17 +62,25 @@ const BookingDashboard: React.FC = () => {
       <div className="glass p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary-500/20 border border-primary-500/30
-                            flex items-center justify-center text-xl">
+            <div className="w-10 h-10 rounded-xl bg-primary-500/20 border border-primary-500/30 flex items-center justify-center text-xl">
               🎫
             </div>
             <div>
-              <h2 className="text-white font-bold text-lg">My Bookings</h2>
+              <h1 className="text-white font-bold text-lg">My Bookings</h1>
               <p className="text-slate-400 text-xs">View and manage your train bookings</p>
             </div>
           </div>
-          <button onClick={fetchBookings} className="btn-primary text-sm !py-2 !px-4">
-            🔄 Refresh
+          <button
+            onClick={fetchBookings}
+            disabled={loading}
+            className="btn-primary text-sm !py-2 !px-4 flex items-center gap-2"
+          >
+            {loading ? (
+              <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+              </svg>
+            ) : '🔄'} Refresh
           </button>
         </div>
 
@@ -86,10 +103,19 @@ const BookingDashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Error */}
+      {/* Cancel error banner */}
+      {cancelError && (
+        <div className="glass p-3 border border-red-500/30 text-red-400 text-sm flex items-center justify-between gap-2">
+          <span>⚠️ {cancelError}</span>
+          <button onClick={() => setCancelError('')} className="text-red-400/60 hover:text-red-400 text-lg leading-none">×</button>
+        </div>
+      )}
+
+      {/* Fetch error */}
       {error && (
         <div className="glass p-4 border-red-500/30 text-red-400 text-sm flex items-center gap-2">
           <span>⚠️</span> {error}
+          <button onClick={fetchBookings} className="ml-auto text-primary-400 hover:text-primary-300 text-xs underline">Retry</button>
         </div>
       )}
 
@@ -110,8 +136,8 @@ const BookingDashboard: React.FC = () => {
           <p className="text-5xl mb-4">📭</p>
           <p className="text-white font-semibold text-lg">No bookings yet</p>
           <p className="text-slate-400 text-sm mt-2 max-w-sm mx-auto">
-            Use the <strong className="text-primary-400">Chat Assistant</strong> to book tickets
-            or try: <em className="text-slate-300">"Book 2 sleeper tickets from Bangalore to Mumbai tomorrow"</em>
+            Use the <strong className="text-primary-400">Chat Assistant</strong> to book tickets.
+            Try: <em className="text-slate-300">"Book 2 sleeper tickets from Bangalore to Mumbai tomorrow"</em>
           </p>
         </div>
       )}
@@ -120,7 +146,12 @@ const BookingDashboard: React.FC = () => {
       {!loading && bookings.length > 0 && (
         <div className="space-y-3">
           {bookings.map(b => (
-            <BookingCard key={b.id} booking={b} onCancel={() => cancel(b.id)} />
+            <BookingCard
+              key={b.id}
+              booking={b}
+              onCancel={() => cancel(b.id)}
+              cancelling={cancellingId === b.id}
+            />
           ))}
         </div>
       )}

@@ -4,6 +4,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ------------------------------------------------------------------ */
+/* Base                                                                  */
+/* ------------------------------------------------------------------ */
 @layer base {
   body {
     @apply bg-dark text-slate-100 font-sans;
@@ -13,6 +16,9 @@
   * { box-sizing: border-box; }
 }
 
+/* ------------------------------------------------------------------ */
+/* Component classes                                                     */
+/* ------------------------------------------------------------------ */
 @layer components {
   /* Glass morphism card */
   .glass {
@@ -51,7 +57,8 @@
   .btn-danger {
     @apply bg-red-500 hover:bg-red-600 text-white font-semibold
            px-4 py-2 rounded-xl transition-all duration-200 text-sm
-           hover:-translate-y-0.5 active:translate-y-0;
+           hover:-translate-y-0.5 active:translate-y-0
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0;
   }
 
   /* Input field */
@@ -104,6 +111,34 @@
 
   /* Typing dots */
   .typing-dot {
-    @apply w-2 h-2 rounded-full bg-slate-400 animate-bounce;
+    @apply w-2 h-2 rounded-full bg-slate-400;
+    animation: typing-bounce 1.2s infinite ease-in-out;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Animations (previously missing — referenced in JSX but undefined)   */
+/* ------------------------------------------------------------------ */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30%           { transform: translateY(-6px); }
+}
+
+.animate-fade-in  { animation: fade-in  0.25s ease-out both; }
+.animate-slide-up { animation: slide-up 0.3s  ease-out both; }
+.animate-pulse-slow { animation: pulse-slow 2s ease-in-out infinite; }

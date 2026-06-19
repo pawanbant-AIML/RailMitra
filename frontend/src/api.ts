@@ -4,12 +4,13 @@ import type { schemas } from './types';
 const apiUrl = import.meta.env.VITE_API_URL;
 const baseURL = apiUrl ? `${apiUrl.replace(/\/$/, '')}/api/v1` : '/api/v1';
 
-const api = axios.create({
-  baseURL,
-});
+const api = axios.create({ baseURL });
 
 export default api;
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 export type StructuredChatRequest =
   | {
       message: string;
@@ -21,49 +22,36 @@ export type StructuredChatRequest =
 export type TrainSearchRequest = {
   from_station: string;
   to_station: string;
+  date?: string;
 };
 
+// ---------------------------------------------------------------------------
+// Normalizers
+// ---------------------------------------------------------------------------
 function isObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 function normalizeChatMessage(value: unknown): schemas.ChatMessage | null {
   if (!isObject(value)) return null;
-  const role = value.role;
-  const content = value.content;
-
+  const { role, content } = value;
   if ((role === 'user' || role === 'assistant') && typeof content === 'string') {
-    return {
-      role,
-      content,
-    };
+    return { role, content };
   }
-
   return null;
 }
 
 function normalizeTrain(value: unknown): schemas.Train | null {
   if (!isObject(value)) return null;
-
-  const train_number = value.train_number;
-  const train_name = value.train_name;
-  const source_station_code = value.source_station_code;
-  const destination_station_code = value.destination_station_code;
-
+  const { train_number, train_name, source_station_code, destination_station_code } = value;
   if (
     typeof train_number === 'string' &&
     typeof train_name === 'string' &&
     typeof source_station_code === 'string' &&
     typeof destination_station_code === 'string'
   ) {
-    return {
-      train_number,
-      train_name,
-      source_station_code,
-      destination_station_code,
-    };
+    return { train_number, train_name, source_station_code, destination_station_code };
   }
-
   return null;
 }
 
@@ -76,14 +64,11 @@ function normalizeStructuredChatResponse(data: unknown): schemas.StructuredChatR
   }
 
   if (!isObject(data)) {
-    return {
-      messages: [],
-      missing_required_fields: [],
-    };
+    return { messages: [], missing_required_fields: [] };
   }
 
   const messages = Array.isArray(data.messages)
-    ? data.messages.map(normalizeChatMessage).filter(Boolean) as schemas.ChatMessage[]
+    ? (data.messages.map(normalizeChatMessage).filter(Boolean) as schemas.ChatMessage[])
     : [];
 
   const missingRequiredFields = Array.isArray(data.missing_required_fields)
@@ -98,89 +83,65 @@ function normalizeStructuredChatResponse(data: unknown): schemas.StructuredChatR
       ? (data.action as schemas.UiAction | string | null)
       : undefined;
 
-  return {
-    messages,
-    action,
-    booking_draft: bookingDraft,
-    missing_required_fields: missingRequiredFields,
-    diagnostics,
-  };
+  return { messages, action, booking_draft: bookingDraft, missing_required_fields: missingRequiredFields, diagnostics };
 }
 
+// ---------------------------------------------------------------------------
+// API calls
+// ---------------------------------------------------------------------------
+
+/**
+ * POST /chat/structured
+ *
+ * On network / server errors this now THROWS so the caller (ChatAssistant)
+ * can append an error bubble to existing messages instead of wiping history.
+ */
 export async function postStructuredChat(
   request: StructuredChatRequest
 ): Promise<schemas.StructuredChatResponse> {
-  try {
-    const response = await api.post('/chat/structured', request);
-    return normalizeStructuredChatResponse(response.data);
-  } catch (error) {
-    const axiosError = error as AxiosError<unknown>;
-
-    return {
-      messages: [],
-      action: undefined,
-      booking_draft: null,
-      missing_required_fields: [],
-      diagnostics: {
-        http_status: axiosError.response?.status,
-        error:
-          axiosError.response?.data &&
-          isObject(axiosError.response.data) &&
-          typeof axiosError.response.data.detail === 'string'
-            ? axiosError.response.data.detail
-            : axiosError.message || 'Failed to fetch structured chat response',
-      },
-    };
-  }
+  const response = await api.post('/chat/structured', request);
+  return normalizeStructuredChatResponse(response.data);
 }
 
-export async function searchTrains(
-  request: TrainSearchRequest
-): Promise<schemas.Train[]> {
+/**
+ * GET /trains/search
+ * Returns empty array on any error (non-critical, UI shows fallback).
+ */
+export async function searchTrains(request: TrainSearchRequest): Promise<schemas.Train[]> {
   try {
-    const response = await api.get('/trains/search', {
-      params: {
-        from_station: request.from_station,
-        to_station: request.to_station,
-      },
-    });
+    const params: Record<string, string> = {
+      from_station: request.from_station,
+      to_station: request.to_station,
+    };
+    if (request.date) params.date = request.date;
 
+    const response = await api.get('/trains/search', { params });
     if (Array.isArray(response.data)) {
       return response.data.map(normalizeTrain).filter(Boolean) as schemas.Train[];
     }
-
     return [];
   } catch (error) {
     const axiosError = error as AxiosError<unknown>;
-
-    console.error('Failed to search trains', {
+    console.error('[searchTrains] failed', {
       status: axiosError.response?.status,
       message: axiosError.message,
     });
-
     return [];
   }
 }
 
-/*
-  Optional legacy helper. Keep it only if your codebase still uses /chat directly.
-  It is safe to leave it here for backward compatibility.
-*/
+/**
+ * Legacy /chat endpoint — kept for backward compatibility.
+ */
 export async function postLegacyChat(
   request:
-    | {
-        message: string;
-        session_id?: string;
-        history?: schemas.ChatMessage[];
-      }
+    | { message: string; session_id?: string; history?: schemas.ChatMessage[] }
     | schemas.ChatMessage[]
 ): Promise<schemas.ChatMessage[]> {
   const response = await api.post('/chat', request);
   const data = response.data;
-
   if (Array.isArray(data)) {
     return data.map(normalizeChatMessage).filter(Boolean) as schemas.ChatMessage[];
   }
-
   return [];
 }
