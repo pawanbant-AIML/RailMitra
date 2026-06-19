@@ -127,6 +127,7 @@ function Field({
 
 export default function BookingDrawer({
   open,
+  onOpenChange,
   bookingDraft,
   onSubmit,
   submitting = false,
