@@ -9,7 +9,7 @@
 /* ------------------------------------------------------------------ */
 @layer base {
   body {
-    @apply bg-dark text-slate-100 font-sans;
+    @apply bg-slate-900 text-slate-100 font-sans;
     background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
     min-height: 100vh;
   }
