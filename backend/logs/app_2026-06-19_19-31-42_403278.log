@@ -1,0 +1,35 @@
+2026-06-19 19:31:51.565 | INFO     | app.agent.tools:search_trains:222 - [tool:search_trains] %s → %s date=%s after=%s before=%s hint=%s
+2026-06-19 19:31:51.576 | INFO     | app.agent.tools:search_trains:222 - [tool:search_trains] %s → %s date=%s after=%s before=%s hint=%s
+2026-06-19 19:31:51.582 | INFO     | app.agent.tools:search_trains:222 - [tool:search_trains] %s → %s date=%s after=%s before=%s hint=%s
+2026-06-19 19:31:51.586 | INFO     | app.agent.tools:book_ticket:378 - [tool:book_ticket] %s→%s cls=%s pax=%s date=%s
+2026-06-19 19:31:51.603 | INFO     | app.agent.tools:get_booking_history:443 - [tool:get_booking_history] user=%s
+2026-06-19 19:31:51.605 | INFO     | app.agent.tools:cancel_booking:424 - [tool:cancel_booking] id=%s
+2026-06-19 19:31:51.613 | INFO     | app.agent.tools:get_station_info:466 - [tool:get_station_info] %s → %s
+2026-06-19 19:31:51.615 | INFO     | app.agent.agent_service:run_structured:195 - [agent] incoming=%r
+2026-06-19 19:31:51.621 | INFO     | app.agent.agent_service:_log_run_diagnostics:305 - [agent] session=%s route=%s intent=%s llm_attempted=%s llm_used=%s local_used=%s fallback=%s llm_error=%s local_error=%s
+2026-06-19 19:31:51.624 | INFO     | app.agent.agent_service:run_structured:195 - [agent] incoming=%r
+2026-06-19 19:31:51.626 | INFO     | app.agent.tools:search_trains:222 - [tool:search_trains] %s → %s date=%s after=%s before=%s hint=%s
+2026-06-19 19:31:51.629 | INFO     | app.agent.agent_service:_log_run_diagnostics:305 - [agent] session=%s route=%s intent=%s llm_attempted=%s llm_used=%s local_used=%s fallback=%s llm_error=%s local_error=%s
+2026-06-19 19:31:51.631 | INFO     | app.agent.agent_service:run_structured:195 - [agent] incoming=%r
+2026-06-19 19:31:51.633 | INFO     | app.agent.tools:search_trains:222 - [tool:search_trains] %s → %s date=%s after=%s before=%s hint=%s
+2026-06-19 19:31:51.635 | INFO     | app.agent.agent_service:_log_run_diagnostics:305 - [agent] session=%s route=%s intent=%s llm_attempted=%s llm_used=%s local_used=%s fallback=%s llm_error=%s local_error=%s
+2026-06-19 19:31:51.637 | INFO     | app.agent.agent_service:run_structured:195 - [agent] incoming=%r
+2026-06-19 19:31:51.639 | INFO     | app.agent.tools:search_trains:222 - [tool:search_trains] %s → %s date=%s after=%s before=%s hint=%s
+2026-06-19 19:31:51.641 | INFO     | app.agent.agent_service:_log_run_diagnostics:305 - [agent] session=%s route=%s intent=%s llm_attempted=%s llm_used=%s local_used=%s fallback=%s llm_error=%s local_error=%s
+2026-06-19 19:31:51.643 | INFO     | app.agent.agent_service:run_structured:195 - [agent] incoming=%r
+2026-06-19 19:31:51.644 | INFO     | app.agent.tools:search_trains:222 - [tool:search_trains] %s → %s date=%s after=%s before=%s hint=%s
+2026-06-19 19:31:51.646 | INFO     | app.agent.agent_service:_log_run_diagnostics:305 - [agent] session=%s route=%s intent=%s llm_attempted=%s llm_used=%s local_used=%s fallback=%s llm_error=%s local_error=%s
+2026-06-19 19:32:25.275 | INFO     | app.api.v1.endpoints.chat:structured_chat_endpoint:156 - [chat:structured] session=%s user_msg=%r history_turns=%d
+2026-06-19 19:32:25.275 | INFO     | app.agent.agent_service:run_structured:195 - [agent] incoming=%r
+2026-06-19 19:32:25.277 | INFO     | app.agent.agent_service:_log_run_diagnostics:305 - [agent] session=%s route=%s intent=%s llm_attempted=%s llm_used=%s local_used=%s fallback=%s llm_error=%s local_error=%s
+2026-06-19 19:32:25.281 | INFO     | app.api.v1.endpoints.chat:structured_chat_endpoint:156 - [chat:structured] session=%s user_msg=%r history_turns=%d
+2026-06-19 19:32:25.281 | INFO     | app.agent.agent_service:run_structured:195 - [agent] incoming=%r
+2026-06-19 19:32:26.433 | INFO     | app.agent.tools:search_trains:222 - [tool:search_trains] %s → %s date=%s after=%s before=%s hint=%s
+2026-06-19 19:32:28.660 | INFO     | app.agent.agent_service:_log_run_diagnostics:305 - [agent] session=%s route=%s intent=%s llm_attempted=%s llm_used=%s local_used=%s fallback=%s llm_error=%s local_error=%s
+2026-06-19 19:32:28.940 | INFO     | app.api.v1.endpoints.chat:structured_chat_endpoint:156 - [chat:structured] session=%s user_msg=%r history_turns=%d
+2026-06-19 19:32:28.941 | INFO     | app.agent.agent_service:run_structured:195 - [agent] incoming=%r
+2026-06-19 19:32:28.941 | INFO     | app.agent.agent_service:_handle_booking_draft:823 - [agent] booking draft prepared session=%s missing=%s ready=%s
+2026-06-19 19:32:28.941 | INFO     | app.agent.agent_service:_log_run_diagnostics:305 - [agent] session=%s route=%s intent=%s llm_attempted=%s llm_used=%s local_used=%s fallback=%s llm_error=%s local_error=%s
+2026-06-19 19:32:28.950 | INFO     | app.api.v1.endpoints.chat:chat_endpoint:118 - [chat] session=%s user_msg=%r history_turns=%d
+2026-06-19 19:32:28.955 | INFO     | app.api.v1.endpoints.chat:chat_endpoint:118 - [chat] session=%s user_msg=%r history_turns=%d
+2026-06-19 19:32:28.959 | INFO     | app.api.v1.endpoints.chat:structured_chat_endpoint:156 - [chat:structured] session=%s user_msg=%r history_turns=%d
